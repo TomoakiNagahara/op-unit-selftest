@@ -96,7 +96,7 @@ class Inspector
 		$io = $dbh->Connect($config);
 
 		//	...
-		self::$_result[$type][$host][$user] = $io;
+		self::$_result['user'][$type][$host][$user]['result'] = $io;
 
 		//	...
 		self::$_dbhs[$type][$host][$user] = $dbh;
@@ -135,8 +135,17 @@ class Inspector
 
 		//	...
 		foreach($configs['structures'] as $config){
+			//	...
+			$host = $config['user']['host'];
+			$type = $config['user']['driver'];
+			$port = $config['user']['port'];
+			$user = $config['user']['user'];
+
+			//	...
 			self::$_dbh = self::User($config['user']);
-			self::Databases($config['databases']);
+
+			//	...
+			self::Databases($config['databases'], self::$_result['structure'][$host][$type][$port]);
 		}
 	}
 
@@ -144,16 +153,81 @@ class Inspector
 	 *
 	 * @param array $config
 	 */
-	static function Databases($config)
+	static function Databases($databases, &$_result)
 	{
 		//	...
-		$sql = \SQL\Show::Database(self::$_dbh);
-		$databases = self::$_dbh->Query($sql);
-D($databases);
+		$sql  = \SQL\Show::Database(self::$_dbh);
+		$list = self::$_dbh->Query($sql);
+
 		//	...
-		foreach( $config as $name => $conf ){
-			D($name, $conf);
+		foreach( $databases as $name => $config ){
+			$io = array_search($name, $list) === false ? false: true;
+			$_result['databases'][$name]['result'] = $io;
+
+			//	...
+			self::tables($name, $config['tables'], $_result);
 		}
+	}
+
+	/** Check databases
+	 *
+	 * @param array $config
+	 */
+	static function Tables($database, $tables, &$_result)
+	{
+		//	...
+		$sql  = \SQL\Show::Table(self::$_dbh, $database);
+		$list = self::$_dbh->Query($sql);
+
+		//	...
+		foreach( $tables as $name => $config ){
+			$io = array_search($name, $list) === false ? false: true;
+			$_result['tables'][$database][$name]['result'] = $io;
+
+			//	...
+			self::Columns($database, $name, ifset($config['columns'], []), $_result);
+			self::Indexes($database, $name, ifset($config['indexes'], []), $_result);
+			self::Autoinc($database, $name, ifset($config['autoinc'], []), $_result);
+		}
+
+		D($tables);
+	}
+
+	static function Columns($database, $table, $columns, &$_result)
+	{
+		//	...
+		$sql  = \SQL\Show::Column(self::$_dbh, $database, $table);
+		$list = self::$_dbh->Query($sql);
+
+		//	...
+		foreach( $columns as $column => $structs ){
+			if(!$io = isset($list[$column]) ? true: false ){
+				$_result['columns'][$database][$table][$column]['result'] = $io;
+				continue;
+			}
+
+			//	...
+			foreach( $structs as $key => $val ){
+				$io = $list[$column][$key] === $val ? true: false;
+				$_result['columns'][$database][$table][$column][$key]['result'] = $io;
+				if(!$io ){
+					$_result['columns'][$database][$table][$column][$key]['detail']['current'] = $list[$column][$key];
+					$_result['columns'][$database][$table][$column][$key]['detail']['update']  = $val;
+				}
+			}
+		}
+	}
+
+	static function Indexes($database, $table, $indexes, &$_result)
+	{
+		//	...
+		$sql  = \SQL\Show::Index(self::$_dbh, $database, $table);
+		$list = self::$_dbh->Query($sql);
+	}
+
+	static function Autoinc($database, $table, $autoinc, &$_result)
+	{
+
 	}
 
 	/** Get inspection result.
