@@ -9,17 +9,26 @@
  * @copyright Tomoaki Nagahara All right reserved.
  */
 //	...
-spl_autoload_register( function($path){
+spl_autoload_register( function($name){
 	//	...
-	$namespace = 'OP\UNIT\SELFTEST\\';
+	$UNIT = 'SELFTEST';
+	$unit = strtolower($UNIT);
+	$Unit = ucfirst($unit);
 
 	//	...
-	if( strpos($path, $namespace) !== 0 ){
+	$name = trim($name, '\\');
+
+	//	...
+	$namespace = "OP\UNIT\\{$UNIT}";
+
+	//	...
+	if( $name === "OP\UNIT\\{$Unit}" ){
+		$name  =  $Unit;
+	}else if( strpos($name, $namespace) === 0 ){
+		$name = substr($name, strlen($namespace)+1);
+	}else{
 		return;
 	}
-
-	//	...
-	$name = substr($path, strlen($namespace));
 
 	//	...
 	$path = __DIR__."/{$name}.class.php";

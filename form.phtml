@@ -9,36 +9,76 @@
  * @copyright Tomoaki Nagahara All right reserved.
  */
 ?>
-<div>
-	<div>
-		<div>
-			User
+<section id="UNIT_SELFTEST">
+	<form action="" method="post">
+		<div role="table">
+			<div>
+				<div>
+					Product
+				</div>
+				<div>
+					<select name="driver">
+						<option>mysql</option>
+					</select>
+				</div>
+			</div>
+			<div>
+				<div>
+					Host
+				</div>
+				<div>
+					<input type="text" name="host" value="localhost" />
+				</div>
+			</div>
+			<div>
+				<div>
+					Port
+				</div>
+				<div>
+					<input type="text" name="port" value="3306" />
+				</div>
+			</div>
+			<div>
+				<div>
+					User
+				</div>
+				<div>
+					<input type="text" name="user" value="root" />
+				</div>
+			</div>
+			<div>
+				<div>
+					Password
+				</div>
+				<div>
+					<input type="password" name="password" value="" />
+				</div>
+			</div>
+			<div>
+				<div>
+					Charset
+				</div>
+				<div>
+					<input type="text" name="charset" value="utf8" />
+				</div>
+			</div>
+			<? if( $failed = \OP\UNIT\SELFTEST\Inspector::Failed() ): ?>
+			<div>
+				<div>
+
+				</div>
+				<div>
+					<input type="checkbox" name="build" value="1" />Build
+				</div>
+			</div>
+			<? endif; ?>
+			<div>
+				<div>
+				</div>
+				<div>
+					<button> Submit </button>
+				</div>
+			</div>
 		</div>
-		<div>
-			<input type="text" value="" />
-		</div>
-	</div>
-	<div>
-		<div>
-			Password
-		</div>
-		<div>
-			<input type="password" value="" />
-		</div>
-	</div>
-	<div>
-		<div>
-			Charset
-		</div>
-		<div>
-			<input type="text" value="" />
-		</div>
-	</div>
-	<div>
-		<div>
-		</div>
-		<div>
-			<button> Submit </button>
-		</div>
-	</div>
-</div>
+	</form>
+</section>
