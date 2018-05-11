@@ -209,6 +209,24 @@ class Inspector
 		return $DB;
 	}
 
+	/** Get DSN
+	 *
+	 */
+	static function _DSN()
+	{
+		//	...
+		$DB = self::_DB();
+
+		//	...
+		$prod = $DB->Driver();
+		$host = $DB->Host();
+		$port = $DB->Port();
+		$dsn  = "{$prod}://{$host}:{$port}";
+
+		//	...
+		return $dsn;
+	}
+
 	/** Automatically do inspection and building.
 	 *
 	 * @param array $args
@@ -266,10 +284,7 @@ class Inspector
 		}
 
 		//	...
-		$prod = $DB->Driver();
-		$host = $DB->Host();
-		$port = $DB->Port();
-		$dsn  = "{$prod}://{$host}:{$port}";
+		$dsn = self::_DSN();
 
 		//	...
 		if(!isset($config[$dsn]) ){
@@ -292,9 +307,8 @@ class Inspector
 	static function Users($configs, $DB)
 	{
 		//	...
-		$prod = $DB->Driver();
 		$host = $DB->Host();
-		$port = $DB->Port();
+		$dsn  = self::_DSN();
 
 		//	...
 		if(!$sql  = \OP\UNIT\SQL\Show::User($DB) ){
@@ -312,20 +326,20 @@ class Inspector
 			$key = $user_name.'@'.$host;
 
 			//	...
-			$config = &self::$_result['user'][$host][$prod][$port][$user_name];
+			$result = &self::$_result[$dsn]['user'][$user_name];
 
-			//	...
-			if( $config['exist'] = isset($lists[$key]) ){
-				//	...
+			//	Check user exist.
+			if( $result['exist'] = isset($lists[$key]) ){
+				//	Generate mysql hashed password.
 				$sql = \OP\UNIT\SQL\Select::Password($user['password'], $DB);
 				$password = $DB->Query($sql, 'password');
 
-				//	...
-				$config['password'] = ($lists[$key]['password'] === $password);
+				//	Check password match.
+				$result['password'] = ($lists[$key]['password'] === $password);
 			}
 
-			//	...
-			if(!$config['result'] = ( $config['exist'] and $config['password'] ) ){
+			//	Result
+			if(!$result['result'] = ( $result['exist'] and $result['password'] ) ){
 				self::$_failure = true;
 			}
 		}
@@ -365,12 +379,10 @@ class Inspector
 	static function Structures($config, $DB)
 	{
 		//	...
-		$prod = $DB->Driver();
-		$host = $DB->Host();
-		$port = $DB->Port();
+		$dsn  = self::_DSN();
 
 		//	...
-		self::Databases($DB, $config['databases'], self::$_result['structure'][$host][$prod][$port]);
+		self::Databases($DB, $config['databases'], self::$_result[$dsn]);
 	}
 
 	/** Inspect databases.
@@ -663,11 +675,19 @@ class Inspector
 	 */
 	static function Result()
 	{
-		return self::$_result;
+		echo '<div id="selftest-result">';
+		echo json_encode(self::$_result);
+		echo '</div>';
+		echo '<script>';
+		echo \Template::Get(__DIR__.'/result.js');
+		echo '</script>';
+		echo '<style>';
+		echo \Template::Get(__DIR__.'/result.css');
+		echo '</style>';
 	}
 
 	static function Debug()
 	{
-		D(__METHOD__, self::$_debug);
+		D(__METHOD__, self::$_debug, self::$_result);
 	}
 }

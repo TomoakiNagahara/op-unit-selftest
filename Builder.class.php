@@ -49,8 +49,10 @@ class Builder
 			D("empty", $dsn, $configs);
 			return;
 		}
-		if(!$result = ifset($results['structure'][$host][$prod][$port]) ){
-			D("empty");
+
+		//	...
+		if(!$result = ifset($results[$dsn]) ){
+			D("This DNS has not been set. ($dsn)");
 			return;
 		}
 
@@ -63,7 +65,7 @@ class Builder
 			self::Index   ($config, $result, $DB);
 
 			//	...
-			self::User($configs[$dsn]['users'], $results['user'], $DB);
+			self::User($configs[$dsn]['users'], $result['user'], $DB);
 		} catch ( \Throwable $e ){
 			\Notice::Set($e);
 		}
@@ -71,12 +73,13 @@ class Builder
 
 	/** Build database.
 	 *
-	 * @param array $config
-	 * @param array $result
-	 * @param \OP\UNIT\DB $DB
+	 * @param   array      $config
+	 * @param   array      $result
+	 * @param  \OP\UNIT\DB $DB
 	 * @throws \Exception
+	 * @return  null
 	 */
-	static function Database($config, &$result, $DB)
+	static function Database($config, $result, $DB)
 	{
 		foreach( $result['databases'] as $database => $temp ){
 			if( $temp['result'] ){
@@ -109,20 +112,23 @@ class Builder
 				throw new \Exception(\Notice::Get()['message']);
 			}
 
-			//	Overwrite result. All table build.
+			//	Overwrite result. All table build. (Is this neccessary?)
+			/*
 			foreach( $config['databases'][$database]['tables'] as $table => $conf ){
 				$result['tables'][$database][$table]['result'] = false;
 			}
+			*/
 		}
 	}
 
 	/** Build tabel.
 	 *
-	 * @param array $config
-	 * @param array $result
-	 * @param \OP\UNIT\DB $DB
+	 * @param   array      $config
+	 * @param   array      $result
+	 * @param  \OP\UNIT\DB $DB
+	 * @return  null
 	 */
-	static function Table($configs, &$result, $DB)
+	static function Table($configs, $result, $DB)
 	{
 		//	...
 		foreach( $result['tables'] as $database => $tables ){
@@ -264,16 +270,11 @@ class Builder
 	static function User($configs, $results, $DB)
 	{
 		//	...
-		$prod = $DB->Product();
-		$host = $DB->Host();
-		$port = $DB->Port();
+		$config['host'] = $DB->Host();
+		$config['port'] = $DB->Port();
 
 		//	...
-		$config['host']	 = $host;
-		$config['port']	 = $port;
-
-		//	...
-		foreach( $results[$host][$prod][$port] as $user_name => $result ){
+		foreach( $results as $user_name => $result ){
 			//	...
 			$config['user']     = $user_name;
 
