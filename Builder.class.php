@@ -65,8 +65,8 @@ class Builder
 			self::Index   ($config, $result, $DB);
 
 			//	...
-			self::User( $configs[$dsn]['users'], $result['users'], $DB);
-			self::Grant($configs[$dsn]['users'], $result['users'], $DB);
+			self::User($configs[$dsn]['users'], $result['users'], $DB);
+			self::Grant($result['users'], $DB);
 		} catch ( \Throwable $e ){
 			\Notice::Set($e);
 		}
@@ -210,12 +210,6 @@ class Builder
 
 					//	Update already exists column.
 					if( $fail ){
-						//	...
-						if( 'pri' === ifset($conf['key']) ){
-							$sql = 'ALTER TABLE '.$_db->Quote($database).'.'.$_db->Quote($table).' DROP PRIMARY KEY';
-							$io  = $_db->Query($sql, 'alter');
-						}
-
 						//	Change is modify.
 						$sql = \OP\UNIT\SQL\Column::Change($database, $table, $name, $conf, $_db);
 						$io  = $_db->Query($sql, 'alter');
@@ -271,26 +265,60 @@ class Builder
 	static function User($configs, $results, $DB)
 	{
 		//	...
-		$config['host'] = $DB->Host();
-	//	$config['port'] = $DB->Port();
+		$host = $DB->Host();
 
 		//	...
-		foreach( $results as $user_name => $result ){
+		foreach( $results as $user => $result ){
 			//	...
-			$config['user']     = $user_name;
+			$config = [];
+			$config['host'] = $host;
+			$config['user'] = $user;
 
 			//	...
 			if(!ifset($result['exist']) ){
 				//	...
 				if( $qu = \OP\UNIT\SQL\User::Create($config, $DB) ){
 					$io = $DB->Query($qu);
+
+					//	...
+					$config['database']  = '*';
+					$config['table']     = '*';
+					$config['privileges']= 'USAGE';
+
+					//	USAGE
+					if( $qu = \OP\UNIT\SQL\Grant::Privilege($config, $DB) ){
+						$io = $DB->Query($qu);
+					}
+
+					//	...
+					foreach( $configs[$user]['privilege'] as $database => $tables ){
+						foreach( $tables as $table => $privileges ){
+							foreach( $privileges as $privilege => $column ){
+								$config = [];
+								$config['host']      = $host;
+								$config['user']      = $user;
+								$config['database']  = $database;
+								$config['table']     = $table;
+								$config['privileges']= $privilege;
+								$config['column']    = $column;
+
+								//	...
+								if( $qu = \OP\UNIT\SQL\Grant::Privilege($config, $DB) ){
+									$io = $DB->Query($qu);
+								}
+							}
+						}
+					}
 				}
 			}
 
 			//	...
 			if(!ifset($result['password']) ){
 				//	...
-				$config['password'] = $configs[$user_name]['password'];
+				$config = [];
+				$config['host'] = $host;
+				$config['user'] = $user;
+				$config['password'] = $configs[$user]['password'];
 				if( $qu = \OP\UNIT\SQL\User::Password($config, $DB) ){
 					$io = $DB->Query($qu);
 				}
@@ -304,13 +332,12 @@ class Builder
 		}
 	}
 
-	/** Build grant.
+	/** Add missing grant.
 	 *
-	 * @param	 array		 $config
 	 * @param	 array		 $result
 	 * @param	\OP\UNIT\DB	 $DB
 	 */
-	static function Grant($configs, $results, $DB)
+	static function Grant($results, $DB)
 	{
 		//	...
 		foreach( $results as $user => $result ){
@@ -321,6 +348,11 @@ class Builder
 
 			//	...
 			$host = $DB->Host();
+
+			//	...
+			if( empty($result['privileges']) ){
+				continue;
+			}
 
 			//	...
 			foreach( $result['privileges'] as $database => $tables ){

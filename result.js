@@ -160,53 +160,110 @@
 		//	...
 		for(var database in json ){
 			for(var table in json[database] ){
+				//	...
+				var list = document.createElement('ul');
+
+				//	...
+				root.querySelector('[data-database="'+database+'"]')
+					.querySelector('[data-table="'+table+'"]').appendChild(list);
+
+				//	...
 				for(var column in json[database][table] ){
 					//	...
-					var list = document.createElement('ul');
+					var result = json[database][table][column]['result'];
+					var color  = result ? 'success' : 'error';
+					var item = document.createElement('li');
+						item.innerText = column;
+						item.classList.add(color);
+						if( !result ){
+							item.classList.add('bold');
+						}
+					list.appendChild(item);
 
 					//	...
-					for(var detail in json[database][table][column] ){
-						if( detail === 'result' ){
-							continue;
-						}
+					var result = __details(list, json[database][table][column]);
 
-						//	...
-						var result  = json[database][table][column][detail]['result'];
-
-						//	...
-						if( result ){
-							continue;
-						}
-
-						//	...
-						root.querySelector('[data-database="'+database+'"]')
-							.querySelector('[data-table="'+table+'"]').appendChild(list);
-
-						//	...
-						var name    = document.createElement('span');
-						var current = document.createElement('span');
-						var modify  = document.createElement('span');
-
-						//	...
-						name    . classList = 'name';
-						current . classList = 'current';
-						modify  . classList = 'modify';
-
-						//	...
-						name   .innerText = detail;
-						current.innerText = json[database][table][column][detail]['detail']['current'];
-						modify .innerText = json[database][table][column][detail]['detail']['modify'];
-
-						//	...
-						var item = document.createElement('li');
-							item.appendChild(name);
-							item.appendChild(current);
-							item.appendChild(modify);
-							item.classList = 'error';
-							list.appendChild(item);
+					//	...
+					if( result ){
+						item.classList.add('success');
+					}else{
+						item.classList.add('error');
+						item.classList.add('bold');
 					}
 				}
 			}
 		}
-	}
+	};
+
+	//	...
+	function __details(root, json){
+		//	...
+		var result = true;
+		var list = document.createElement('ol');
+		root.appendChild(list);
+
+		//	...
+		for(var detail in json ){
+			if( detail === 'result' ){
+				continue;
+			}
+
+			//	...
+			if( json[detail]['result'] ){
+				continue;
+			}
+
+			//	...
+			result = false;
+
+			//	...
+			var span = document.createElement('span');
+				span.innerText = detail;
+				span.classList.add('bold');
+
+			var item = document.createElement('li');
+				item.classList.add('error');
+
+			//	...
+			item.appendChild(span);
+			list.appendChild(item);
+
+			//	...
+			__detail(item, json[detail]['detail']);
+		}
+
+		//	...
+		return result;
+	};
+
+	//	...
+	function __detail(item, json){
+		//	...
+		var current = document.createElement('span');
+		var arrow   = document.createElement('span');
+		var modify  = document.createElement('span');
+
+		//	...
+		current.innerText = json.current;
+		modify .innerText = json.modify;
+
+		//	...
+		item   .classList.add('name');
+		current.classList.add('current');
+		arrow  .classList.add('arrow');
+		modify .classList.add('modify');
+
+		//	...
+		if( json.current.length === 0 ){
+			current.classList.add('empty');
+		}
+		if( json.modify .length === 0 ){
+			modify .classList.add('empty');
+		}
+
+		//	...
+		item.appendChild(current);
+		item.appendChild(arrow);
+		item.appendChild(modify);
+	};
 })();

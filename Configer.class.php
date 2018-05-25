@@ -99,7 +99,7 @@ class Configer
 		$dsn = self::Dsn();
 
 		//	...
-		self::$_config[$dsn]['privileges'][$user][$database][$table][$privilege] = $column;
+		self::$_config[$dsn]['users'][$user]['privilege'][$database][$table][$privilege] = $column;
 	}
 
 	static function Password($password=null)
