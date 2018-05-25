@@ -65,7 +65,8 @@ class Builder
 			self::Index   ($config, $result, $DB);
 
 			//	...
-			self::User($configs[$dsn]['users'], $result['user'], $DB);
+			self::User( $configs[$dsn]['users'], $result['users'], $DB);
+			self::Grant($configs[$dsn]['users'], $result['users'], $DB);
 		} catch ( \Throwable $e ){
 			\Notice::Set($e);
 		}
@@ -271,7 +272,7 @@ class Builder
 	{
 		//	...
 		$config['host'] = $DB->Host();
-		$config['port'] = $DB->Port();
+	//	$config['port'] = $DB->Port();
 
 		//	...
 		foreach( $results as $user_name => $result ){
@@ -281,16 +282,18 @@ class Builder
 			//	...
 			if(!ifset($result['exist']) ){
 				//	...
-				$qu = \OP\UNIT\SQL\User::Create($config, $DB);
-				$io = $DB->Query($qu);
+				if( $qu = \OP\UNIT\SQL\User::Create($config, $DB) ){
+					$io = $DB->Query($qu);
+				}
 			}
 
 			//	...
 			if(!ifset($result['password']) ){
 				//	...
 				$config['password'] = $configs[$user_name]['password'];
-				$qu = \OP\UNIT\SQL\User::Password($config, $DB);
-				$io = $DB->Query($qu);
+				if( $qu = \OP\UNIT\SQL\User::Password($config, $DB) ){
+					$io = $DB->Query($qu);
+				}
 			}
 
 			/**
@@ -303,23 +306,45 @@ class Builder
 
 	/** Build grant.
 	 *
-	 * @param array $config
-	 * @param array $result
-	 * @param \OP\UNIT\DB $DB
+	 * @param	 array		 $config
+	 * @param	 array		 $result
+	 * @param	\OP\UNIT\DB	 $DB
 	 */
-	static function Grant($config, $result, $DB)
+	static function Grant($configs, $results, $DB)
 	{
-		return ;
+		//	...
+		foreach( $results as $user => $result ){
+			//	...
+			if( ifset($result['privileges']) === true ){
+				continue;
+			}
 
-		foreach( $config['databases'] as $database_name => $database ){
-			foreach( $database['tables'] as $table_name => $table ){
-				$config['database']  = $database_name;
-				$config['table']     = $table_name;
-				$config['privilege'] = $table['privileges'];
+			//	...
+			$host = $DB->Host();
 
-				//	...
-				if( $qu = \OP\UNIT\SQL\Grant::Privilege($config, $DB) ){
-					$io = $DB->Query($qu);
+			//	...
+			foreach( $result['privileges'] as $database => $tables ){
+				foreach( $tables as $table => $privileges ){
+					foreach( $privileges as $privilege => $fields ){
+						//	...
+						if( $fields !== '*' ){
+							D('Un support each fields yet.', $fields);
+							continue;
+						}
+
+						//	...
+						$config = [];
+						$config['host']      = $host;
+						$config['user']      = $user;
+						$config['database']  = $database;
+						$config['table']     = $table;
+						$config['privileges']= $privilege;
+
+						//	...
+						if( $qu = \OP\UNIT\SQL\Grant::Privilege($config, $DB) ){
+							$io = $DB->Query($qu);
+						}
+					}
 				}
 			}
 		}

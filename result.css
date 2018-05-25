@@ -25,6 +25,10 @@
 	content: "PASSWORD";
 }
 
+#selftest-result .error > .error.privilege:after {
+	content: "PRIVILEGE";
+}
+
 #selftest-result .current {
 	font-style: italic;
 }
@@ -35,6 +39,13 @@
 	content: "→";
 }
 
-#selftest-result .modify {
+#selftest-result .user .modify:before {
+	margin-left:  0.3em;
+	margin-right: 0.1em;
+	content: "("
+}
 
+#selftest-result .user .modify:after {
+	margin-left:  0.1em;
+	content: ")"
 }

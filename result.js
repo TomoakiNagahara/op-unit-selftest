@@ -38,7 +38,7 @@
 			item.innerText = 'Users';
 			list.appendChild(item);
 			root.appendChild(list);
-		__user(list, json[dsn]['user']);
+		__user(list, json[dsn]['users']);
 
 		//	...
 		var list = document.createElement('ul');
@@ -59,6 +59,7 @@
 	function __user( root, json){
 		//	...
 		var list = document.createElement('ol');
+			list.classList.add('user');
 			root.appendChild(list);
 
 		//	...
@@ -68,12 +69,14 @@
 			var color  = result ? 'success':'error';
 
 			//	...
-			var name = document.createElement('span');
-			var error= document.createElement('span');
-			var item = document.createElement('li');
+			var name   = document.createElement('span');
+			var error  = document.createElement('span');
+			var modify = document.createElement('span');
+			var item   = document.createElement('li');
 				item.classList = color;
 				item.appendChild(name);
 				item.appendChild(error);
+				item.appendChild(modify);
 				list.appendChild(item);
 
 			//	...
@@ -82,8 +85,15 @@
 
 			//	...
 			error.classList.add('error');
-			if(!json[user]['exist']    ){ error.classList.add('exist')    }
-			if(!json[user]['password'] ){ error.classList.add('password') }
+			if(!json[user]['exist']    ){ error.classList.add('exist')    }else
+			if(!json[user]['password'] ){ error.classList.add('password') }else
+			if(!json[user]['privilege']){ error.classList.add('privilege')}
+
+			//	...
+			if( json[user]['modify'] ){
+				modify.innerText = json[user]['modify'];
+				modify.classList.add('modify');
+			}
 		}
 	}
 
