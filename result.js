@@ -7,10 +7,14 @@
  * @author    Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
  * @copyright Tomoaki Nagahara All right reserved.
  */
-(function(){
+//	...
+setTimeout(function(){
 	//	...
-	var text = document.querySelector('#selftest-result').innerText;
-	document.querySelector('#selftest-result').innerText = '';
+	var area = document.querySelector('#OP_SELFTEST');
+	var text = area.innerText;
+
+	//	...
+	area.innerText = '';
 
 	//	...
 	var json = JSON.parse(text);
@@ -21,7 +25,7 @@
 		div.appendChild(roots);
 
 	//	...
-	document.querySelector('#selftest-result').appendChild(div);
+	area.appendChild(div);
 
 	//	...
 	for(var dsn in json ){
@@ -50,6 +54,9 @@
 
 		//	...
 		__tables(list, json[dsn]['tables']);
+
+		//	...
+		__fields(list, json[dsn]['fields']);
 
 		//	...
 		__columns(list, json[dsn]['columns']);
@@ -156,7 +163,7 @@
 	}
 
 	//	...
-	function __columns(root, json){
+	function __fields(root, json){
 		//	...
 		for(var database in json ){
 			for(var table in json[database] ){
@@ -168,27 +175,25 @@
 					.querySelector('[data-table="'+table+'"]').appendChild(list);
 
 				//	...
-				for(var column in json[database][table] ){
+				for(var field in json[database][table] ){
 					//	...
-					var result = json[database][table][column]['result'];
-					var color  = result ? 'success' : 'error';
+					var result = json[database][table][field]['result'];
 					var item = document.createElement('li');
-						item.innerText = column;
-						item.classList.add(color);
-						if( !result ){
-							item.classList.add('bold');
-						}
+						item.innerText = field;
+						item.classList.add('field');
+						item.dataset.field = field;
 					list.appendChild(item);
-
-					//	...
-					var result = __details(list, json[database][table][column]);
 
 					//	...
 					if( result ){
 						item.classList.add('success');
+
+						//	Remove list tag.
+					//	list.removeChild(item);
 					}else{
 						item.classList.add('error');
 						item.classList.add('bold');
+						item.classList.add('missing');
 					}
 				}
 			}
@@ -196,74 +201,69 @@
 	};
 
 	//	...
-	function __details(root, json){
-		//	...
-		var result = true;
-		var list = document.createElement('ol');
-		root.appendChild(list);
+	function __columns(root, json){
+		for(var database in json ){
+			for(var table in json[database] ){
+				for(var field in json[database][table] ){
+					//	...
+					var list = document.createElement('ol');
 
-		//	...
-		for(var detail in json ){
-			if( detail === 'result' ){
-				continue;
+					//	...
+					for(var column in json[database][table][field] ){
+						//	...
+						if( json[database][table][field][column].result ){
+							continue;
+						}
+
+						//	...
+						var item = root	.querySelector('[data-database="'+database+'"]')
+										.querySelector('[data-table="'+table+'"]')
+										.querySelector('[data-field="'+field+'"]');
+						item.appendChild(list);
+
+						//	...
+						__column(list, column, json[database][table][field][column]);
+					}
+				}
 			}
-
-			//	...
-			if( json[detail]['result'] ){
-				continue;
-			}
-
-			//	...
-			result = false;
-
-			//	...
-			var span = document.createElement('span');
-				span.innerText = detail;
-				span.classList.add('bold');
-
-			var item = document.createElement('li');
-				item.classList.add('error');
-
-			//	...
-			item.appendChild(span);
-			list.appendChild(item);
-
-			//	...
-			__detail(item, json[detail]['detail']);
 		}
-
-		//	...
-		return result;
 	};
 
 	//	...
-	function __detail(item, json){
+	function __column(list, column, json){
+
+		//	...
+		var item    = document.createElement('li');
+			item.classList.add('error');
+		var name    = document.createElement('name');
+			name.innerText = column;
+
 		//	...
 		var current = document.createElement('span');
 		var arrow   = document.createElement('span');
 		var modify  = document.createElement('span');
+
+		current.classList.add('current');
+		arrow  .classList.add('arrow');
+		modify .classList.add('modify');
+
+		//	...
+		item.appendChild(name);
+		item.appendChild(current);
+		item.appendChild(arrow);
+		item.appendChild(modify);
+		list.appendChild(item);
 
 		//	...
 		current.innerText = json.current;
 		modify .innerText = json.modify;
 
 		//	...
-		item   .classList.add('name');
-		current.classList.add('current');
-		arrow  .classList.add('arrow');
-		modify .classList.add('modify');
-
-		//	...
-		if( json.current.length === 0 ){
+		if( json.current === null || json.current.length ){
 			current.classList.add('empty');
 		}
-		if( json.modify .length === 0 ){
+		if( json.modify  === null || json.modify.length ){
 			modify .classList.add('empty');
 		}
-
-		//	...
-		item.appendChild(current);
-		item.appendChild(arrow);
-		item.appendChild(modify);
 	};
-})();
+}, 0);
