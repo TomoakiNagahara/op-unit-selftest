@@ -144,7 +144,7 @@ class Configer
 		return $_table;
 	}
 
-	static function Column($name, $type, $length, $null, $default, $comment)
+	static function Column($name, $type, $comment, $option=[])
 	{
 		//	...
 		$dsn      = self::Dsn();
@@ -152,18 +152,27 @@ class Configer
 		$table    = self::Table();
 
 		//	...
-		$column['name']    = $name;
-		$column['type']    = $type;
-		$column['length']  = $length;
-		$column['null']    = $null ? true: false;
-		$column['default'] = $default;
-		$column['comment'] = $comment;
+		$type     = strtolower($type);
+		$length   = $option['length']   ?? null;
+		$null     = $option['null']     ?? true;
+		$default  = $option['default']  ?? null;
+		$unsigned = $option['unsigned'] ?? null;
+
+		//	...
+		$column['name']     = $name;
+		$column['type']     = $type;
+		$column['unsigned'] = $unsigned;
+		$column['length']   = $length ?? \OP\UNIT\SQL\Column::Length($type, $unsigned);
+		$column['null']     = $null;
+		$column['default']  = $default;
+		$column['comment']  = $comment;
 
 		//	...
 		switch( $type ){
 			case 'timestamp':
 				$column['extra']   = 'on update CURRENT_TIMESTAMP';
 				$column['default'] = 'CURRENT_TIMESTAMP';
+				$column['null']    = false;
 				break;
 
 			default:
