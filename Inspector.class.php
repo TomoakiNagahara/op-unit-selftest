@@ -170,7 +170,7 @@ class Inspector
 
 	/** Generate DB object from the Form.
 	 *
-	 * @return \OP\UNIT\DB $DB
+	 * @return	\OP\UNIT\Database	 $DB
 	 */
 	static function _DB()
 	{
@@ -200,7 +200,7 @@ class Inspector
 		}
 
 		//	...
-		return $DB;
+		return $DB ?? \Unit::Instance('Database');
 	}
 
 	/** Get DSN
@@ -209,16 +209,10 @@ class Inspector
 	static function _DSN()
 	{
 		//	...
-		$DB = self::_DB();
+		$config = self::_DB()->Config();
 
 		//	...
-		$prod = $DB->Driver();
-		$host = $DB->Host();
-		$port = $DB->Port();
-		$dsn  = "{$prod}://{$host}:{$port}";
-
-		//	...
-		return $dsn;
+		return "{$config['prod']}://{$config['host']}:{$config['port']}";
 	}
 
 	/** Automatically do inspection and building.
@@ -252,11 +246,6 @@ class Inspector
 
 			//	...
 			self::Inspection($config, $DB);
-		}
-
-		//	...
-		if( isset($DB) ){
-			self::$_debug['queries'] = $DB->GetQueries();
 		}
 
 		//	...
@@ -301,7 +290,7 @@ class Inspector
 	static function Users($configs, $DB)
 	{
 		//	...
-		$host = $DB->Host();
+		$host = $DB->Config()['host'];
 		$dsn  = self::_DSN();
 
 		//	...
@@ -427,7 +416,7 @@ class Inspector
 		$user = $config['user'];
 
 		/* @var $DB \OP\UNIT\DB\DB */
-		if(!$DB = \Unit::Factory('DB') ){
+		if(!$DB = \Unit::Instance('Database') ){
 			return false;
 		}
 
@@ -755,8 +744,11 @@ class Inspector
 		echo '</style>';
 	}
 
+	/** For developers
+	 *
+	 */
 	static function Debug()
 	{
-		D(__METHOD__, self::$_debug, self::$_result);
+		D(__METHOD__, self::_DB()->Queries(), self::$_result);
 	}
 }
