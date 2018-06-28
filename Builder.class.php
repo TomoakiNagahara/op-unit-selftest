@@ -59,6 +59,7 @@ class Builder
 			//	...
 			self::Database($config, $result, $DB);
 			self::Table   ($config, $result, $DB);
+			self::Field   ($config, $result, $DB);
 			self::Column  ($config, $result, $DB);
 			self::Index   ($config, $result, $DB);
 
@@ -142,6 +143,49 @@ class Builder
 				$args['table']    = $table;
 				if( $sql = \OP\UNIT\SQL\Table::Create($args, $DB) ){
 					$io  = $DB->Query($sql, 'create');
+				}
+			}
+		}
+	}
+
+	/** Build new field.
+	 *
+	 * @param array $config
+	 * @param array $result
+	 * @param \OP\UNIT\DB $DB
+	 */
+	static function Field($config, &$result, $_db)
+	{
+		//	...
+		foreach( ifset($result['fields'], []) as $database => $tables ){
+			//	...
+			foreach( $tables as $table => $columns ){
+				//	...
+				$first = true;
+				$after = null;
+
+				//	...
+				foreach( $columns as $name => $column ){
+					//	...
+					$conf = $config['databases'][$database]['tables'][$table]['columns'][$name];
+
+					//	...
+					if( $first ){
+						$first = false;
+						$conf['first'] = true;
+					}else{
+						$conf['after'] = $after;
+					}
+
+					//	...
+					$after = $name;
+
+					//	Create new column.
+					if(!$column['result'] ){
+						//	...
+						$sql = \OP\UNIT\SQL\Column::Create($database, $table, $name, $conf, $_db);
+						$io  = $_db->Query($sql, 'alter');
+					}
 				}
 			}
 		}
