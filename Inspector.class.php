@@ -80,7 +80,7 @@ class Inspector
 		//	Adjust structure configuration.
 		foreach( $config ?? [] as $dsn => &$structure ){
 			//	...
-			if(!preg_match('|([a-z]+)://([-_a-z0-9\.]+):([0-9]+)|', $dsn)){
+			if(!preg_match('|([a-z]+)://([-_a-z0-9\.]+):([0-9]+)??(.+)?|', $dsn)){
 				self::Error("The DSN format is wrong. ($dsn)");
 				return false;
 			}
