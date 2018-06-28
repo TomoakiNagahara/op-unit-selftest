@@ -371,7 +371,7 @@ class Inspector
 		$grants = $DB->Query($sql, 'show');
 
 		//	...
-		foreach( $configs['users'][$user]['privilege'] as $database => $tables ){
+		foreach( $configs['users'][$user]['privilege'] ?? [] as $database => $tables ){
 			foreach( $tables as $table => $privileges ){
 				//	...
 				if(!isset($grants[$user][$host][$database][$table]) ){
