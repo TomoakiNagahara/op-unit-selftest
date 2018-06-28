@@ -747,15 +747,12 @@ class Inspector
 	 */
 	static function Result()
 	{
-		echo '<div id="selftest-result">';
-		echo json_encode(self::$_result);
-		echo '</div>';
-		echo '<script>';
-		echo \Template::Get(__DIR__.'/result.js');
-		echo '</script>';
-		echo '<style>';
-		echo \Template::Get(__DIR__.'/result.css');
-		echo '</style>';
+		//	...
+		Json(self::$_result, '#OP_SELFTEST');
+
+		//	...
+		\App::WebPack(__DIR__.'/result.js');
+		\App::WebPack(__DIR__.'/result.css');
 	}
 
 	/** For developers
