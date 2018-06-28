@@ -30,13 +30,27 @@ class Configer
 	 */
 	use \OP_CORE;
 
+	/** Save configuration.
+	 *
+	 * @var array
+	 */
 	static private $_config;
 
+	/** Get saved configuration.
+	 *
+	 */
 	static function Get()
 	{
 		return self::$_config;
 	}
 
+	/** Get DSN
+	 *
+	 * @param	 string		 $host
+	 * @param	 string		 $product
+	 * @param	 string		 $port
+	 * @return	 string		 $dsn
+	 */
 	static function DSN($host=null, $product=null, $port=null)
 	{
 		static $_host = 'localhost', $_product = 'mysql', $_port = '3306';
@@ -67,6 +81,13 @@ class Configer
 		return sprintf('%s://%s:%s', $_product, $_host, $_port);
 	}
 
+	/** Set user.
+	 *
+	 * @param	 string		 $user
+	 * @param	 string		 $password
+	 * @param	 string		 $charset
+	 * @return	 string		 $user
+	 */
 	static function User($user=null, $password=null, $charset=null)
 	{
 		//	...
@@ -93,6 +114,14 @@ class Configer
 		return $_user;
 	}
 
+	/** Set privilege.
+	 *
+	 * @param	 string		 $user
+	 * @param	 string		 $database
+	 * @param	 string		 $table
+	 * @param	 string		 $privilege
+	 * @param	 string		 $column
+	 */
 	static function Privilege($user, $database, $table='*', $privilege='INSERT, SELECT, UPDATE, DELETE', $column='*')
 	{
 		//	...
@@ -102,6 +131,11 @@ class Configer
 		self::$_config[$dsn]['users'][$user]['privilege'][$database][$table][$privilege] = $column;
 	}
 
+	/** Get/Set password.
+	 *
+	 * @param	 string		 $password
+	 * @return	 string		 $password
+	 */
 	static function Password($password=null)
 	{
 		static $_password;
@@ -116,6 +150,12 @@ class Configer
 		return $_password;
 	}
 
+	/** Get/Set database config.
+	 *
+	 * @param	 string		 $database
+	 * @param	 string		 $charset
+	 * @return	 string		 $database
+	 */
 	static function Database($database=null, $charset='utf8')
 	{
 		static $_database;
@@ -129,6 +169,13 @@ class Configer
 		return $_database;
 	}
 
+	/** Get/Set table config.
+	 *
+	 * @param	 string		 $table
+	 * @param	 string		 $comment
+	 * @param	 string		 $charset
+	 * @return	 string		 $table
+	 */
 	static function Table($table=null, $comment=null, $charset='utf8')
 	{
 		static $_table;
@@ -144,6 +191,13 @@ class Configer
 		return $_table;
 	}
 
+	/** Set column config.
+	 *
+	 * @param	 string		 $name
+	 * @param	 string		 $type
+	 * @param	 string		 $comment
+	 * @param	 array		 $option
+	 */
 	static function Column($name, $type, $comment, $option=[])
 	{
 		//	...
@@ -182,6 +236,13 @@ class Configer
 		self::$_config[$dsn]['databases'][$database]['tables'][$table]['columns'][$name] = $column;
 	}
 
+	/** Set index config.
+	 *
+	 * @param	 string		 $name
+	 * @param	 string		 $type
+	 * @param	 string		 $column
+	 * @param	 string		 $comment
+	 */
 	static function Index($name, $type, $column, $comment)
 	{
 		//	...
@@ -210,6 +271,7 @@ class Configer
 			case 'pkey':
 				self::$_config[$dsn]['databases'][$database]['tables'][$table]['columns'][$column]['key']   = 'pri';
 				self::$_config[$dsn]['databases'][$database]['tables'][$table]['columns'][$column]['extra'] = 'auto_increment';
+				self::$_config[$dsn]['databases'][$database]['tables'][$table]['columns'][$column]['null']  = false;
 				break;
 		}
 
@@ -217,11 +279,21 @@ class Configer
 		self::$_config[$dsn]['databases'][$database]['tables'][$table]['indexes'][$name] = $index;
 	}
 
+	/** Set charset.
+	 *
+	 * @param	 string		 $field
+	 * @param	 string		 $charset
+	 */
 	static function Charset($field, $charset)
 	{
 		self::Collate($field, $charset);
 	}
 
+	/** Set collate.
+	 *
+	 * @param	 string		 $field
+	 * @param	 string		 $collate
+	 */
 	static function Collate($field, $collate)
 	{
 		//	...
@@ -243,6 +315,11 @@ class Configer
 		self::$_config[$dsn]['databases'][$database]['tables'][$table]['columns'][$field]['collation'] = $collate;
 	}
 
+	/** Generate collate from charset.
+	 *
+	 * @param	 string		 $collate
+	 * @return	 string		 $collate
+	 */
 	static private function _Collate($collate)
 	{
 		switch( $collate ){
