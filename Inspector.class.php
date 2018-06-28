@@ -586,9 +586,20 @@ class Inspector
 		$success = true;
 
 		//	...
-		foreach( ['type','length','null','default','extra',/*'key','privileges',*/'comment','collation'] as $key ){
+		foreach( ['type','length','unsigned','null','default','extra',/*'key','privileges',*/'comment','collation'] as $key ){
+			//	...
+			$io = true;
+
 			//	...
 			switch( $key ){
+				case 'unsigned':
+					if( isset($fact[$key]) or isset($column[$key]) ){
+						$io = (ifset($column[$key]) ? true: false) === (ifset($fact[$key])   ? true: false) ? true: false;
+					}else{
+						continue;
+					}
+					break;
+
 				//	...
 				case 'null':
 				case 'extra':
@@ -619,6 +630,9 @@ class Inspector
 				//	...
 				case 'length':
 					switch( $column['type'] ){
+						case 'float':
+							continue 2;
+
 						case 'set':
 						case 'enum':
 							$join = [];
