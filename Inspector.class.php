@@ -688,7 +688,7 @@ class Inspector
 	 */
 	static function Form()
 	{
-		\Template::Run(__DIR__.'/form.phtml');
+		\App::Template(__DIR__.'/form.phtml');
 	}
 
 	/** Return one stacked error.
