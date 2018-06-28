@@ -180,7 +180,7 @@ class Inspector
 		}
 
 		//	...
-		if(!$request = \Http::Request() ){
+		if(!$request = Escape($_POST) ){
 			self::Error("Has not been submitted the Form.");
 			return;
 		}
@@ -241,7 +241,7 @@ class Inspector
 		self::Inspection($config, $DB);
 
 		//	...
-		if( self::$_failure and \Http::Request(null, 'build') ){
+		if( self::$_failure and $_POST['build'] ?? false ){
 			//	...
 			Builder::Auto($config, self::$_result, $DB);
 
