@@ -42,12 +42,6 @@ class Inspector
 	 */
 	static private $_config;
 
-	/** Store debug information.
-	 *
-	 * @var array
-	 */
-	static private $_debug = [];
-
 	/** Store error messages.
 	 *
 	 * @var array
