@@ -8,53 +8,15 @@
  * @copyright Tomoaki Nagahara All right reserved.
  */
 
-#selftest-result .error .name {
+#selftest-result {
+	border:  1px solid black;
+	margin:  1em 0;
+	padding: 1em 0.5em;
+}
+
+#selftest-result .error {
 	font-weight: bold;
 }
-
-#selftest-result .error .name:after {
-	margin: 0.2em;
-	content: ":";
-}
-
-#selftest-result .error > .error.exist:after {
-	content: "EXIST";
-}
-
-#selftest-result .error > .error.password:after {
-	content: "PASSWORD";
-}
-
-#selftest-result .error > .error.privilege:after {
-	content: "PRIVILEGE";
-}
-
-#selftest-result .current {
-	margin-left: 0.5em;
-	_font-style: italic;
-	_font-weight: bold;
-}
-
-#selftest-result .current:after {
-	margin-left:  0.2em;
-	margin-right: 0.4em;
-}
-
-#selftest-result .arrow:after {
-	margin: 0.5em;
-	content: "→";
-}
-
-#selftest-result .modify {
-}
-
-
-#selftest-result .empty:after,
-#selftest-result .empty:before {
-	margin:  0;
-	padding: 0;
-	content: '"';
-} 
 
 #selftest-result .user .modify:before {
 	margin-left:  0.3em;
@@ -65,4 +27,101 @@
 #selftest-result .user .modify:after {
 	margin-left:  0.1em;
 	content: ")"
+}
+
+#selftest-result .column .current {
+	margin-left: 0.5em;
+}
+
+#selftest-result .column .current:before {
+	margin-left:  0.0em;
+	margin-right: 0.5em;
+	content: ":";
+}
+
+#selftest-result .column .current:after {
+	margin-left:  0.2em;
+	margin-right: 0.4em;
+}
+
+#selftest-result .column .modify {
+
+}
+
+#selftest-result .column .arrow:after {
+	margin: 0.5em;
+	content: "→";
+}
+
+/** Common
+ * 
+ */
+
+#OP_SELFTEST .error .name {
+	font-weight: bold;
+}
+
+#OP_SELFTEST .error .name:after {
+	margin: 0.2em;
+	content: ":";
+}
+
+/** User
+ * 
+ */
+
+#OP_SELFTEST .user .modify:before {
+	margin-left:  0.3em;
+	margin-right: 0.1em;
+	content: "("
+}
+
+#OP_SELFTEST .user .modify:after {
+	margin-left:  0.1em;
+	content: ")"
+}
+
+#OP_SELFTEST .error > .error.exist:after {
+	content: "EXIST";
+}
+
+#OP_SELFTEST .error > .error.password:after {
+	content: "PASSWORD";
+}
+
+#OP_SELFTEST .error > .error.privilege:after {
+	content: "PRIVILEGE";
+}
+
+#OP_SELFTEST .current {
+	margin-left: 0.5em;
+}
+
+#OP_SELFTEST .current:after {
+	margin-left:  0.2em;
+	margin-right: 0.4em;
+}
+
+#OP_SELFTEST .arrow:after {
+	margin: 0.5em;
+	content: "→";
+}
+
+#OP_SELFTEST .modify {
+
+}
+
+/** Field
+ * 
+ */
+
+#OP_SELFTEST .empty:after,
+#OP_SELFTEST .empty:before {
+	margin:  0;
+	padding: 0;
+	content: '"';
+}
+
+#OP_SELFTEST .field.missing:after {
+	content: " → MISSING";
 }
