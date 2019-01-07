@@ -44,86 +44,141 @@ class Configer
 		return self::$_config;
 	}
 
+	/** Wrap method.
+	 *
+	 * @param	 string	 $method
+	 * @param	 array	 $config
+	 */
+	static function Set($method, $config)
+	{
+		switch( strtolower($method) ){
+			case 'table':
+				//	...
+				$table_name = $config['table'] ?? $config['name'] ?? null;
+
+				//	...
+				if(!$table_name ){
+					\Notice::Set("Has not been set table name.");
+					return;
+				};
+
+				//	...
+				self::Table(
+					$table_name,
+					$config['comment']   ?? null,
+					$config['charset']   ?? null,
+					$config['collation'] ?? null
+				);
+				break;
+
+			case 'column':
+				//	...
+				$option = [];
+				$option['unsigned'] = $config['unsigned'] ?? null;
+
+				//	...
+				$column_name = $config['column'] ?? $config['field'] ?? $config['name'] ?? null;
+
+				//	...
+				if(!$column_name ){
+					\Notice::Set("Has not been set column name.");
+					return;
+				};
+
+				//	...
+				self::Column(
+					$column_name,
+					$config['type'],
+					$config['length']  ?? null,
+					$config['null']    ?? null,
+					$config['default'] ?? null,
+					$config['comment'] ?? null,
+					$option
+				);
+				break;
+
+			case 'index':
+				self::Index(
+					$config['name'],
+					$config['type'],
+					$config['column'],
+					$config['comment']
+				);
+				break;
+			default:
+				\Notice::Set("Has not been support this method. ($method)");
+				break;
+		}
+	}
+
 	/** Get DSN
 	 *
-	 * @param	 string		 $host
-	 * @param	 string		 $product
-	 * @param	 string		 $port
+	 * @param	 array		 $config
 	 * @return	 string		 $dsn
 	 */
-	static function DSN($host=null, $product=null, $port=null)
+	static function DSN($config=null)
 	{
-		static $_host = 'localhost', $_product = 'mysql', $_port = '3306';
+		//	...
+		static $_config = [
+			'host'    => 'localhost',
+			'product' => 'mysql',
+			'port'    => '3306'
+		];
 
 		//	...
-		if( $host ){
-			$_host = $host;
-		}
-		if( $product ){
-			$_product = $product;
-		}
-		if( $port ){
-			$_port = $port;
-		}
-
-		//	...
-		if(!$host ){
-			$_host;
-		}
-		if(!$product ){
-			$_product;
-		}
-		if(!$port ){
-			$_port;
+		foreach( array_keys($_config) as $key ){
+			if( $val = $config[$key] ?? null ){
+				$_config[$key] = $val;
+			}
 		}
 
 		//	...
-		return sprintf('%s://%s:%s', $_product, $_host, $_port);
+		return sprintf('%s://%s:%s', $_config['product'], $_config['host'], $_config['port']);
 	}
 
 	/** Set user.
 	 *
-	 * @param	 string		 $user
-	 * @param	 string		 $password
-	 * @param	 string		 $charset
-	 * @return	 string		 $user
+	 * @param	 array		 $config
 	 */
-	static function User($user=null, $password=null, $charset=null)
+	static function User($config=null)
 	{
 		//	...
-		static $_user, $_charset='utf8';
+		$dsn = self::Dsn();
 
 		//	...
-		if( $user ){
-			$_user = $user;
-			$dsn   = self::Dsn();
-			self::$_config[$dsn]['users'][$_user]['name'] = $_user;
+		$user = $config['user'] ?? $config['name'] ?? null;
+
+		//	...
+		if(!$user ){
+			throw new \Exception('Has not been set user name.');
 		}
 
 		//	...
-		if( $password ){
-			self::Password($password);
-		}
-
-		if( $charset ){
-			$_charset = $charset;
-			self::$_config[$dsn]['users'][$_user]['charset'] = $_charset;
-		}
-
-		//	...
-		return $_user;
+		self::$_config[$dsn]['users'][$user]['name']     = $user;
+		self::$_config[$dsn]['users'][$user]['password'] = $config['password'] ?? null;
+		self::$_config[$dsn]['users'][$user]['charset']  = $config['charset']  ?? 'utf8';
 	}
 
 	/** Set privilege.
 	 *
-	 * @param	 string		 $user
-	 * @param	 string		 $database
-	 * @param	 string		 $table
-	 * @param	 string		 $privilege
-	 * @param	 string		 $column
+	 * @param	 array		 $config
 	 */
-	static function Privilege($user, $database, $table='*', $privilege='INSERT, SELECT, UPDATE, DELETE', $column='*')
+	static function Privilege($config)
 	{
+		//	...
+		$user = $database = $table = $privilege = $column = null;
+
+		//	...
+		foreach(['user','database','table','privilege','column'] as $key ){
+			//	...
+			if( empty($config[$key]) ){
+				throw new \Exception("Has not been set this value. ($key)");
+			};
+
+			//	...
+			${$key} = $config[$key];
+		};
+
 		//	...
 		$dsn = self::Dsn();
 
@@ -136,6 +191,7 @@ class Configer
 	 * @param	 string		 $password
 	 * @return	 string		 $password
 	 */
+	/*
 	static function Password($password=null)
 	{
 		static $_password;
@@ -149,23 +205,33 @@ class Configer
 		}
 		return $_password;
 	}
+	*/
 
 	/** Get/Set database config.
 	 *
-	 * @param	 string		 $database
-	 * @param	 string		 $charset
+	 * @param	 array		 $config
 	 * @return	 string		 $database
 	 */
-	static function Database($database=null, $charset='utf8')
+	static function Database($config=null)
 	{
 		static $_database;
-		if( $database ){
-			$_database = $database;
+
+		//	...
+		if( $config ){
+			//	...
+			$_database = $config['name'];
+			$charset   = $config['charset'] ?? 'utf8';
+
+			//	...
 			$dsn       = self::Dsn();
 			$collation = self::_Collate($charset);
-			self::$_config[$dsn]['databases'][$database]['name']      = $_database;
-			self::$_config[$dsn]['databases'][$database]['collation'] = $collation;
+
+			//	...
+			self::$_config[$dsn]['databases'][$_database]['name']      = $_database;
+			self::$_config[$dsn]['databases'][$_database]['collation'] = $collation;
 		}
+
+		//	...
 		return $_database;
 	}
 
@@ -174,20 +240,25 @@ class Configer
 	 * @param	 string		 $table
 	 * @param	 string		 $comment
 	 * @param	 string		 $charset
-	 * @return	 string		 $table
+	 * @return	 string		 $table is current table name.
 	 */
-	static function Table($table=null, $comment=null, $charset='utf8')
+	static function Table($table=null, $comment=null, $charset='utf8', $collation=null)
 	{
+		//	...
 		static $_table;
+
+		//	...
 		if( $table ){
 			$_table    = $table;
 			$dsn       = self::Dsn();
 			$database  = self::Database();
-			$collation = self::_Collate($charset);
+			$collation = self::_Collate($charset, $collation);
 			self::$_config[$dsn]['databases'][$database]['tables'][$table]['name']      = $_table;
 			self::$_config[$dsn]['databases'][$database]['tables'][$table]['collation'] = $collation;
 			self::$_config[$dsn]['databases'][$database]['tables'][$table]['comment']   = $comment;
 		}
+
+		//	...
 		return $_table;
 	}
 
@@ -195,10 +266,13 @@ class Configer
 	 *
 	 * @param	 string		 $name
 	 * @param	 string		 $type
+	 * @param	 string|int	 $length
+	 * @param	 boolean	 $null
+	 * @param	 string|null $default
 	 * @param	 string		 $comment
 	 * @param	 array		 $option
 	 */
-	static function Column($name, $type, $comment, $option=[])
+	static function Column($name, $type, $length, $null, $default, $comment, $option=[])
 	{
 		//	...
 		$dsn      = self::Dsn();
@@ -207,12 +281,12 @@ class Configer
 
 		//	...
 		$type     = strtolower($type);
-		$length   = $option['length']   ?? null;
-		$null     = $option['null']     ?? true;
-		$default  = $option['default']  ?? null;
+		$length   = $option['length']   ?? $length;
 		$unsigned = $option['unsigned'] ?? null;
 
 		//	...
+		$column = [];
+		$column['field']    = $name;
 		$column['name']     = $name;
 		$column['type']     = $type;
 		$column['unsigned'] = $unsigned;
@@ -238,12 +312,13 @@ class Configer
 
 	/** Set index config.
 	 *
-	 * @param	 string		 $name
-	 * @param	 string		 $type
-	 * @param	 string		 $column
-	 * @param	 string		 $comment
+	 * @param   string    $name
+	 * @param   string    $type
+	 * @param   string    $column
+	 * @param   string    $comment
+	 * @throws \Exception $e
 	 */
-	static function Index($name, $type, $column, $comment)
+	static function Index(string $name, string $type, string $column, string $comment)
 	{
 		//	...
 		$dsn      = self::Dsn();
@@ -251,14 +326,23 @@ class Configer
 		$table    = self::Table();
 
 		//	...
+		$columns = [];
 		foreach( explode(',', $column) as $field ){
-			if( empty(self::$_config[$dsn]['databases'][$database]['tables'][$table]['columns'][trim($field)]) ){
-				\Notice::Set("Set index was failed. Has not been set this column. ($database, $table, $column)");
+			//	...
+			$field = trim($field);
+
+			//	...
+			if( empty(self::$_config[$dsn]['databases'][$database]['tables'][$table]['columns'][$field]) ){
+				self::Error("Set index was failed. Has not been set this field name. ($dsn, $database, $table, $field)");
 				return;
-			}
+			};
+
+			//	...
+			$columns[] = $field;
 		}
 
 		//	...
+		$index = [];
 		$index['name']    = $name;
 		$index['type']    = $type;
 		$index['column']  = $column;
@@ -269,9 +353,18 @@ class Configer
 			case 'ai':
 			case 'pri':
 			case 'pkey':
+				//	...
+				if( count($columns) !== 1 ){
+					\Notice::Set("Primary key is just only one column. ($column)");
+				};
+				//	...
 				self::$_config[$dsn]['databases'][$database]['tables'][$table]['columns'][$column]['key']   = 'pri';
-				self::$_config[$dsn]['databases'][$database]['tables'][$table]['columns'][$column]['extra'] = 'auto_increment';
 				self::$_config[$dsn]['databases'][$database]['tables'][$table]['columns'][$column]['null']  = false;
+
+				//	...
+				if( $type === 'ai' or $type === 'auto_increment' ){
+					self::$_config[$dsn]['databases'][$database]['tables'][$table]['columns'][$column]['extra'] = 'auto_increment';
+				}
 				break;
 		}
 
@@ -333,5 +426,10 @@ class Configer
 				break;
 		}
 		return $collate;
+	}
+
+	static function Error($error)
+	{
+		\OP\UNIT\Selftest::Error($error);
 	}
 }

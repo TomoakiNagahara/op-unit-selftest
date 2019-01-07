@@ -67,12 +67,18 @@ class Inspector
 	{
 		//	Include configuration file.
 		if( is_string($args) ){
-			if( file_exists($args) ){
-				$config = include($args);
-			}else{
-				self::Error("Does not exists this file name. ($args)");
-				return;
-			}
+			//	...
+			if(!file_exists($args) ){
+				throw new \Exception("Does not exists this file name. ($args)");
+			};
+
+			//	...
+			$config = include($args);
+
+			//	...
+			if(!is_array($config) ){
+				throw new \Exception("Empty return value. ($args)");
+			};
 		}else{
 			$config = $args;
 		}
@@ -122,9 +128,15 @@ class Inspector
 
 						//	...
 						switch( $type = $define['type'] ?? null ){
+							case null:
+								D("type is null. ($database_name, $table_name, $column_name, $type)");
+								break;
+
 							case 'text':
 								unset($define['length']);
 								break;
+
+							default:
 						}
 
 						//	$define['index'] -- copy --> $define['key']
@@ -168,50 +180,11 @@ class Inspector
 		return $config;
 	}
 
-	/** Generate DB object from the Form.
-	 *
-	 * @return	\OP\UNIT\Database	 $DB
-	 */
-	static function _DB()
-	{
-		//	...
-		if( $_SERVER['REQUEST_METHOD'] === 'GET' ){
-			return;
-		}
-
-		//	...
-		if(!$request = Escape($_POST) ){
-			self::Error("Has not been submitted the Form.");
-			return;
-		}
-
-		//	...
-		foreach(['driver','host','port','user'] as $key){
-			if(!isset($request[$key])){
-				self::Error("Configuration arguments has not been set $key.");
-				return;
-			}
-		}
-
-		/* @var $DB \OP\UNIT\DB\DB */
-		if(!$DB = self::Connect($request) ){
-			self::Error("Database connection was failed.");
-			return;
-		}
-
-		//	...
-		return $DB ?? \Unit::Instance('Database');
-	}
-
 	/** Get DSN
 	 *
 	 */
-	static function _DSN()
+	static function _DSN($config)
 	{
-		//	...
-		$config = self::_DB()->Config();
-
-		//	...
 		return "{$config['prod']}://{$config['host']}:{$config['port']}";
 	}
 
@@ -219,13 +192,8 @@ class Inspector
 	 *
 	 * @param array $args
 	 */
-	static function Auto($args)
+	static function Auto($args, $DB)
 	{
-		//	...
-		if(!$DB = self::_DB() ){
-			return;
-		}
-
 		//	...
 		if(!$config = self::_Config($args) ){
 			return;
@@ -252,6 +220,9 @@ class Inspector
 		if( self::$_failure === null ){
 			self::$_failure  =  false;
 		}
+
+		//	...
+		return !self::Failed();
 	}
 
 	/** Inspection.
@@ -267,7 +238,7 @@ class Inspector
 		}
 
 		//	...
-		$dsn = self::_DSN();
+		$dsn = self::_DSN( $DB->Config() );
 
 		//	...
 		if(!isset($config[$dsn]) ){
@@ -291,7 +262,8 @@ class Inspector
 	{
 		//	...
 		$host = $DB->Config()['host'];
-		$dsn  = self::_DSN();
+		$dsn  = self::_DSN($DB->Config());
+		$lists = [];
 
 		//	...
 		if(!$sql  = \OP\UNIT\SQL\Show::User($DB) ){
@@ -300,7 +272,9 @@ class Inspector
 
 		//	...
 		foreach( $DB->Query($sql, 'select') as $record ){
-			$lists["{$record['user']}@{$record['host']}"] = $record;
+			$host = $record['host'];
+			$user = $record['user'];
+			$lists["{$user}@{$host}"] = $record;
 		}
 
 		//	...
@@ -352,81 +326,92 @@ class Inspector
 		}
 
 		//	...
-		if(!$sql  = \OP\UNIT\SQL\Show::Grant($DB, $host, $user) ){
+		if(!$sql = \OP\UNIT\SQL\Show::Grant($DB, $host, $user) ){
 			return;
 		}
 
 		//	...
-		$grants = $DB->Query($sql, 'show');
+		$grants = [];
+		foreach( $DB->Query($sql, 'show') as $string ){
+			//	...
+			$match = [];
+			preg_match('/GRANT (.+) ON (.+)\.(.+) TO (.+)@([^\s]+)/', $string, $match);
+
+			//	...
+			$grant = [];
+			$grant['privilege'] = $match[1];
+			$grant['privilege'] = strtolower($grant['privilege']);
+			$grant['privilege'] = str_replace(' ', '', $grant['privilege']);
+			$database           = trim($match[2], '`');
+			$table              = trim($match[3], '`');
+		//	$grant['user']      = trim($match[4], "'");
+		//	$grant['host']      = trim($match[5], "'");
+			$grants[$database][$table] = $grant;
+		};
+
+		//	...
+		$result['database'] = true;
+		$result['table']    = true;
 
 		//	...
 		foreach( $configs['users'][$user]['privilege'] ?? [] as $database => $tables ){
+
+			//	...
+			$result['databases'][$database] = isset($grants[$database]);
+
+			//	...
+			if( $result['databases'][$database] === false ){
+				$result['database'] = false;
+				continue;
+			};
+
+			//	...
 			foreach( $tables as $table => $privileges ){
+
 				//	...
-				if(!isset($grants[$user][$host][$database][$table]) ){
-					$result['privileges'] = false;
+				$result['tables'][$database][$table] = isset($grants[$database][$table]);
+
+				//	...
+				if( $result['tables'][$database][$table] === false ){
+					$result['table'] = false;
+					continue;
+				};
+
+				//	...
+				if(!isset($grants[$database][$table]) ){
+					$result['privilege'] = false;
 					continue;
 				}
 
 				//	...
 				foreach( $privileges as $privilege => $columns ){
 					//	...
-					if( is_string($privilege) ){
-						foreach( explode(',', $privilege) as $key ){
-							$temp[trim($key)] = $columns;
-						}
-
-						//	...
-						$privilege = $temp;
-					}
+					$privilege = str_replace(' ', '', $privilege);
 
 					//	...
-					foreach( $privilege as $key => $field ){
-						//	...
-						if( isset($grants[$user][$host][$database][$table][$key]) ){
-							continue;
-						}
+					$arr1 = explode(',', $privilege);
+					$arr2 = explode(',', $grants[$database][$table]['privilege']);
+					$base = array_unique( array_merge( $arr1, $arr2) );
 
+					//	...
+					$dif1 = array_diff($base, $arr1);
+					$dif2 = array_diff($base, $arr2);
+
+					//	...
+					if( $dif1 or $dif2 ){
 						//	...
-						$result['privileges'] = false;
-					}
+						$result['privilege'] = false;
+						$result['privileges'][$database][$table] = join(',', array_merge($dif1, $dif2));
+					};
+
+					//	...
+					if( false ){ D($columns); };
 				}
 			}
 		}
 
 		//	...
-		if( empty($result['privileges']) ){
-			$result['privileges'] = true;
-		}
-
-		//	...
-		return $result['privileges'] === true ? true: false;
-	}
-
-	/** Check each user connection.
-	 *
-	 * @param  array          $config
-	 * @return \OP\UNIT\DB\DB $DB
-	 */
-	static function Connect($config)
-	{
-		//	...
-		$type = $config['driver'];
-		$host = $config['host'];
-		$user = $config['user'];
-
-		/* @var $DB \OP\UNIT\DB\DB */
-		if(!$DB = \Unit::Instance('Database') ){
-			return false;
-		}
-
-		//	...
-		if(!$DB->Connect($config)){
-			return false;
-		}
-
-		//	...
-		return $DB;
+		return array_search(false, $result, true) ? false: true;
 	}
 
 	/** Inspect structures.
@@ -437,7 +422,7 @@ class Inspector
 	static function Structures($config, $DB)
 	{
 		//	...
-		$dsn  = self::_DSN();
+		$dsn  = self::_DSN($DB->Config());
 
 		//	...
 		self::Databases($DB, $config['databases'], self::$_result[$dsn]);
@@ -677,8 +662,14 @@ class Inspector
 	static function Indexes($DB, $database, $table, $indexes, &$_result)
 	{
 		//	...
-		$sql  = \OP\UNIT\SQL\Show::Index($DB, $database, $table);
-		$list = $DB->Query($sql);
+		if(!$sql  = \OP\UNIT\SQL\Show::Index($DB, $database, $table) ){
+			throw new \Exception("Failed: $sql");
+		}
+
+		//	...
+		if(!$list = $DB->Query($sql) ){
+			throw new \Exception("Failed: $sql ($list)");
+		}
 
 		//	`ALTER TABLE ``t_test`` DROP PRIMARY KEY;
 	}
@@ -703,7 +694,7 @@ class Inspector
 	 *
 	 * </pre>
 	 *
-	 * @param unknown $message
+	 * @param	 string		 $message
 	 */
 	static function Error($message=null)
 	{
