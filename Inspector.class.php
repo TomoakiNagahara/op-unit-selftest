@@ -15,6 +15,18 @@
  */
 namespace OP\UNIT\SELFTEST;
 
+/** Used class
+ *
+ */
+use OP\OP_CORE;
+use OP\OP_SESSION;
+use OP\Notice;
+use OP\UNIT\Database;
+use OP\Unit;
+use function OP\ifset;
+use function OP\Hasha1;
+use function OP\Json;
+
 /** Inspector
  *
  * @created   2017-12-09
@@ -28,7 +40,7 @@ class Inspector
 	/** trait
 	 *
 	 */
-	use \OP_CORE, \OP_SESSION;
+	use OP_CORE, OP_SESSION;
 
 	/** Build
 	 *
@@ -60,6 +72,25 @@ class Inspector
 	 */
 	static private $_result;
 
+	/** Get SQL Object.
+	 *
+	 * @created  2019-04-09
+	 * @return  \OP\UNIT\SQL
+	 */
+	static private function _SQL()
+	{
+		//	...
+		static $_SQL;
+
+		//	...
+		if(!$_SQL ){
+			$_SQL = Unit::Instantiate('SQL');
+		};
+
+		//	...
+		return $_SQL;
+	}
+
 	/** Get configuration array.
 	 *
 	 */
@@ -73,7 +104,9 @@ class Inspector
 			};
 
 			//	...
-			$config = include($args);
+			$config = call_user_func(function($path){
+				return include($path);
+			}, $args);
 
 			//	...
 			if(!is_array($config) ){
@@ -165,7 +198,7 @@ class Inspector
 					}
 
 					//	...
-					if( $column_name = ifset($table['ai']) ){
+					if( $column_name = $table['ai'] ?? null ){
 						$table['columns'][$column_name]['extra'] = 'auto_increment';
 						$table['columns'][$column_name]['key']   = 'pri';
 					}
@@ -191,10 +224,13 @@ class Inspector
 	/** Automatically do inspection and building.
 	 *
 	 * @param	 array		 $args
-	 * @param	\IF_DATABASE $DB
+	 * @param	Database $DB
 	 */
 	static function Auto($args, $DB=null)
 	{
+		//	...
+		self::$_failure = false;
+
 		//	...
 		if(!$config = self::_Config($args) ){
 			return;
@@ -203,7 +239,7 @@ class Inspector
 		//	...
 		if( $DB === null ){
 			//	...
-			if(!$DB = \Unit::Instantiate('Database') ){
+			if(!$DB = self::DB() ){
 				self::$_failure = true;
 				return !self::Failed();
 			};
@@ -226,6 +262,9 @@ class Inspector
 				return !self::Failed();
 			};
 		};
+
+		//	...
+		self::_SQL()->DB($DB);
 
 		//	...
 		self::Inspection($config, $DB);
@@ -265,16 +304,10 @@ class Inspector
 	/** Inspection.
 	 *
 	 * @param   array      $args
-	 * @param  \OP\UNIT\DB $DB
+	 * @param  Database $DB
 	 */
 	static function Inspection($config, $DB)
 	{
-		//	...
-		if(!\Unit::Load('SQL') ){
-			self::$_failure = true;
-			return false;
-		}
-
 		//	...
 		$dsn = self::_DSN( $DB->Config() );
 
@@ -298,7 +331,7 @@ class Inspector
 	/** Check connection of users.
 	 *
 	 * @param   array      $config
-	 * @param  \OP\UNIT\DB $DB
+	 * @param  Database $DB
 	 */
 	static function Users($configs, $DB)
 	{
@@ -308,7 +341,7 @@ class Inspector
 		$lists = [];
 
 		//	...
-		if(!$sql  = \OP\UNIT\SQL\Show::User([], $DB) ){
+		if(!$sql  = self::_SQL()->DDL()->Show()->User([], $DB) ){
 			return;
 		}
 
@@ -350,7 +383,7 @@ class Inspector
 			};
 
 			//	Generate mysql hashed password.
-			$sql = \OP\UNIT\SQL\Select::Password($user['password'], $DB);
+			$sql = self::_SQL()->DDL()->Show()->Password(['password'=>$user['password']]);
 			$password = $DB->Query($sql, 'password');
 
 			//	Check password match.
@@ -378,7 +411,7 @@ class Inspector
 
 	/** Check privilege.
 	 *
-	 * @param	\IF_DATABASE $DB
+	 * @param	Database $DB
 	 * @param	 string		 $host
 	 * @param	 string		 $user
 	 * @param	 array		 $configs
@@ -390,11 +423,29 @@ class Inspector
 		$success = true;
 
 		//	...
-		$sql  = \OP\UNIT\SQL\Show::Grant($DB, $host, $user);
+		$sql  = self::_SQL()->DDL()->Show()->Grants(['host'=>$host, 'user'=>$user]);
 		$real = $DB->Query($sql, 'show');
 
 		//	...
+		if( (count($real) === 1) and ($real['*']['*'][0] === 'USAGE') ){
+			$results['privileges'][$user][$host] = false;
+			return false;
+		};
+
+		//	...
 		foreach( $configs['users'][$user]['privilege'] as $database => $databases ){
+
+			//	Check if all privileges
+			if( $real[$user] ?? null ){
+				//	Check all tables.
+				if( $real[$user]['*'] ?? null ){
+					//	ALL PRIVILEGES
+					if( array_search('ALL PRIVILEGES', $real[$user]['*']) !== false ){
+						return $success;
+					}
+				}
+			}
+
 			//	...
 			foreach( $databases as $tables => $privileges ){
 				//	...
@@ -428,6 +479,8 @@ class Inspector
 						//	...
 						$result['result']  = true;
 						$result['columns'] = $columns;
+
+						//	...
 						if( false ){
 							D($result);
 						};
@@ -443,7 +496,7 @@ class Inspector
 	/** Inspect structures.
 	 *
 	 * @param  array      $config
-	 * @param \OP\UNIT\DB $DB
+	 * @param Database $DB
 	 */
 	static function Structures($config, $DB)
 	{
@@ -456,14 +509,14 @@ class Inspector
 
 	/** Inspect databases.
 	 *
-	 * @param	\IF_DATABASE $DB
+	 * @param	Database $DB
 	 * @param	 array		 $databases
 	 * @param	&array		 $_result
 	 */
 	static function Databases($DB, $databases, &$_result)
 	{
 		//	...
-		$sql  = \OP\UNIT\SQL\Show::Database($DB);
+		$sql = self::_SQL()->DDL()->Show()->Database();
 
 		//	...
 		if(!$list = $DB->Query($sql) ){
@@ -504,7 +557,7 @@ class Inspector
 
 	/** Inspect each table.
 	 *
-	 * @param	\IF_DATABASE $DB
+	 * @param	Database $DB
 	 * @param	 string		 $database
 	 * @param	 string		 $table
 	 * @param	&array		 $_result
@@ -513,7 +566,7 @@ class Inspector
 	static function Tables($DB, $database, $tables, &$_result)
 	{
 		//	...
-		$sql  = \OP\UNIT\SQL\Show::Table($DB, $database);
+		$sql  = self::_SQL()->DDL()->Show()->Table(['database'=>$database]);
 		$list = $DB->Query($sql);
 
 		//	...
@@ -536,8 +589,14 @@ class Inspector
 			}
 
 			//	...
-			self::Fields( $DB, $database, $table_name, ($table['columns'] ?? []), $_result);
-			self::Indexes($DB, $database, $table_name, ($table['indexes'] ?? []), $_result);
+			if(!self::Fields( $DB, $database, $table_name, ($table['columns'] ?? []), $_result) ){
+				self::$_failure = true;
+			};
+
+			//	...
+			if(!self::Indexes($DB, $database, $table_name, ($table['indexes'] ?? []), $_result) ){
+				self::$_failure = true;
+			};
 		}
 
 		//	...
@@ -551,7 +610,7 @@ class Inspector
 
 	/** Inspect each fields.
 	 *
-	 * @param  \OP\UNIT\DB $DB
+	 * @param  Database $DB
 	 * @param   string     $database
 	 * @param   string     $table
 	 * @param   array      $columns
@@ -561,7 +620,7 @@ class Inspector
 	static function Fields($DB, $database, $table, $columns, &$_result)
 	{
 		//	Get fields list.
-		$sql  = \OP\UNIT\SQL\Show::Column($DB, $database, $table);
+		$sql  = self::_SQL()->DDL()->Show()->Column(['database'=>$database, 'table'=>$table]);
 		$list = $DB->Query($sql, 'show');
 
 		//	Each fields.
@@ -581,13 +640,18 @@ class Inspector
 			self::Columns($DB, $database, $table, $name, $details, $list[$name], $_result);
 		}
 
+		//	Check leftover field name.
+		foreach( array_keys(array_diff_key($list, $columns)) as $field ){
+			$_result['fields'][$database][$table][$field]['result'] = null;
+		}
+
 		//	...
 		return $_result['fields'][$database][$table][$name]['result'];
 	}
 
 	/** Inspect each columns.
 	 *
-	 * @param  \OP\UNIT\DB $DB
+	 * @param  Database $DB
 	 * @param   string     $database
 	 * @param   string     $table
 	 * @param   string     $field
@@ -612,7 +676,7 @@ class Inspector
 					if( isset($fact[$key]) or isset($column[$key]) ){
 						$io = (ifset($column[$key]) ? true: false) === (ifset($fact[$key])   ? true: false) ? true: false;
 					}else{
-						continue;
+						continue 2;
 					}
 					break;
 
@@ -655,7 +719,7 @@ class Inspector
 				case 'length':
 					switch( $column['type'] ){
 						case 'float':
-							continue 2;
+							continue 3;
 
 						case 'set':
 						case 'enum':
@@ -698,7 +762,7 @@ class Inspector
 
 	/** Inspect index each table.
 	 *
-	 * @param	\IF_DATABASE $DB
+	 * @param	Database $DB
 	 * @param	 string		 $database
 	 * @param	 string		 $table
 	 * @param	 array		 $indexes
@@ -708,7 +772,7 @@ class Inspector
 	static function Indexes($DB, $database, $table, $_configs, &$_result)
 	{
 		//	...
-		$sql  = \OP\UNIT\SQL\Show::Index($DB, $database, $table);
+		$sql  = self::_SQL()->DDL()->Show()->Index(['database'=>$database, 'table'=>$table]);
 		$real = $DB->Query($sql);
 
 		//	...
@@ -728,24 +792,29 @@ class Inspector
 
 			//	...
 			switch( $type = strtolower($index['type']) ){
-				case 'primary':
+				//	PRIMARY KEY
 				case 'ai':
+				case 'pkey':
+				case 'primary':
 					if( isset($real['PRIMARY']) ){
 						$io = (join(',',$real['PRIMARY']['columns'])) === $index['column'];
 					};
 					break;
+
 				case 'index':
 					if( $io = isset($real[$index_name]['unique']) ){
 						$io =!$real[$index_name]['unique'];
 					};
 					break;
+
 				case 'unique':
 					if( $io = isset($real[$index_name]['unique']) ){
 						$io = $real[$index_name]['unique'];
 					};
 					break;
+
 				default:
-					\Notice::Set("Has not been support this type. ($type)");
+					Notice::Set("Has not been support this type. ($type)");
 			};
 
 			//	...
@@ -778,11 +847,11 @@ class Inspector
 		$build = self::Session('build');
 
 		//	...
-		if( \Unit::Load('webpack') ){
-			\OP\UNIT\WebPack::JS( __DIR__.'/form');
-			\OP\UNIT\WebPack::Css(__DIR__.'/form');
-		};
-		\App::Template(__DIR__.'/form.phtml', ['build'=>$build]);
+		Unit::Instantiate('WebPack')->Js( __DIR__.'/form');
+		Unit::Instantiate('WebPack')->Css(__DIR__.'/form');
+
+		//	...
+		Unit::Instantiate('App')->Template(__DIR__.'/form.phtml', ['build'=>$build]);
 	}
 
 	/** Return one stacked error.
@@ -826,6 +895,15 @@ class Inspector
 		return self::$_config;
 	}
 
+	/** Is inspection result.
+	 *
+	 * @return boolean
+	 */
+	static function isResult()
+	{
+		return !self::$_failure;
+	}
+
 	/** Get is failed.
 	 *
 	 * @return boolean
@@ -849,8 +927,10 @@ class Inspector
 		};
 
 		//	...
-		\App::WebPack(__DIR__.'/result.js');
-		\App::WebPack(__DIR__.'/result.css');
+		if( $webpack = \OP\Unit::Instantiate('WebPack') ){
+			$webpack->Js( __DIR__.'/result');
+			$webpack->Css(__DIR__.'/result');
+		};
 	}
 
 	static function Help()
@@ -863,6 +943,9 @@ class Inspector
 	 */
 	static function Debug()
 	{
+		//	...
+		$debug = null;
+
 		//	...
 		while( $error = self::Error() ){
 			$debug['Error'][] = $error;

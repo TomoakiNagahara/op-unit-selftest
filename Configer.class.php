@@ -15,6 +15,14 @@
  */
 namespace OP\UNIT\SELFTEST;
 
+/** Used class
+ *
+ */
+use Exception;
+use OP\OP_CORE;
+use OP\Notice;
+use function OP\ifset;
+
 /** Configer
  *
  * @created   2018-03-24
@@ -28,13 +36,65 @@ class Configer
 	/** trait
 	 *
 	 */
-	use \OP_CORE;
+	use OP_CORE;
 
 	/** Save configuration.
 	 *
 	 * @var array
 	 */
 	static private $_config;
+
+	/** Get SQL Object.
+	 *
+	 * @return \OP\UNIT\SQL
+	 */
+
+	/** Calc integer length.
+	 *
+	 * @param	 string		 $type
+	 * @param	 boolean	 $unsigned
+	 * @param	 integer	 $length
+	 * @return	 integer	 $length
+	 */
+	static private function _Length($type, $unsigned)
+	{
+		//	...
+		switch( strtolower($type) ){
+			case 'tinyint':
+				$length = 4;
+				break;
+
+			case 'smallint':
+				$length = 6;
+				break;
+
+			case 'mediumint':
+				$length = 8;
+				break;
+
+			case 'int':
+				$length = 11;
+				break;
+
+			case 'bigint':
+				$length = 20;
+				break;
+
+			case 'float':
+				$length = 0;
+				break;
+
+			default:
+		}
+
+		//	...
+		if( $unsigned and $length ){
+			$length--;
+		}
+
+		//	...
+		return $length ?? null;
+	}
 
 	/** Get saved configuration.
 	 *
@@ -58,7 +118,7 @@ class Configer
 
 				//	...
 				if(!$table_name ){
-					\Notice::Set("Has not been set table name.");
+					Notice::Set("Has not been set table name.");
 					return;
 				};
 
@@ -81,7 +141,7 @@ class Configer
 
 				//	...
 				if(!$column_name ){
-					\Notice::Set("Has not been set column name.");
+					Notice::Set("Has not been set column name.");
 					return;
 				};
 
@@ -123,7 +183,7 @@ class Configer
 				);
 				break;
 			default:
-				\Notice::Set("Has not been support this method. ($method)");
+				Notice::Set("Has not been support this method. ($method)");
 				break;
 		}
 	}
@@ -168,7 +228,7 @@ class Configer
 
 		//	...
 		if( !$host or !$user ){
-			throw new \Exception("Has not been set user name or host name. ({$user}@{$host})");
+			throw new Exception("Has not been set host name or user name. (host={$host}, user={$user})");
 		}
 
 		//	...
@@ -191,7 +251,7 @@ class Configer
 		foreach(['user','database','table','privilege','column'] as $key ){
 			//	...
 			if( empty($config[$key]) ){
-				throw new \Exception("Has not been set this value. ($key)");
+				throw new Exception("Has not been set this value. ($key)");
 			};
 
 			//	...
@@ -241,6 +301,11 @@ class Configer
 
 		//	...
 		if( $config ){
+			//	...
+			if(!is_string($config['name']) ){
+				throw new \Exception("Database name is not string.");
+			};
+
 			//	...
 			$_database = $config['name'];
 			$charset   = $config['charset'] ?? 'utf8';
@@ -295,7 +360,7 @@ class Configer
 	 * @param	 string		 $comment
 	 * @param	 array		 $option
 	 */
-	static function Column($name, $type, $length, $null, $default, $comment, $option=[])
+	static function Column($name, $type, $length=null, $null=true, $default=null, $comment='', $option=[])
 	{
 		//	...
 		$dsn      = self::Dsn();
@@ -313,7 +378,7 @@ class Configer
 		$column['name']     = $name;
 		$column['type']     = $type;
 		$column['unsigned'] = $unsigned;
-		$column['length']   = $length ?? \OP\UNIT\SQL\Column::Length($type, $unsigned);
+		$column['length']   = $length ?? self::_Length($type, $unsigned);
 		$column['null']     = $null;
 		$column['default']  = $default;
 		$column['comment']  = $comment;
@@ -321,11 +386,16 @@ class Configer
 		//	...
 		switch( $type ){
 			case 'timestamp':
-				$column['extra']   = 'on update CURRENT_TIMESTAMP';
-				$column['default'] = 'CURRENT_TIMESTAMP';
-				$column['null']    = false;
-				break;
+				//	...
+				if(!isset($column['extra']) ){
+					$column['extra']   = 'on update CURRENT_TIMESTAMP';
+				};
 
+				//	...
+				if( $column['null']   === false and $column['default'] === null ){
+					$column['default'] = 'CURRENT_TIMESTAMP';
+				};
+				break;
 			default:
 		}
 
@@ -339,7 +409,7 @@ class Configer
 	 * @param   string    $type
 	 * @param   string    $column
 	 * @param   string    $comment
-	 * @throws \Exception $e
+	 * @throws  Exception $e
 	 */
 	static function Index(string $name, string $type, string $column, string $comment)
 	{
@@ -356,7 +426,7 @@ class Configer
 
 			//	...
 			if( empty(self::$_config[$dsn]['databases'][$database]['tables'][$table]['columns'][$field]) ){
-				self::Error("Set index was failed. Has not been set this field name. ($dsn, $database, $table, $field)");
+				self::Error("Set index was failed. This field name is not exists. ({$dsn}, database={$database}, table={$table}, field={$field})");
 				return;
 			};
 
@@ -378,7 +448,7 @@ class Configer
 			case 'pkey':
 				//	...
 				if( count($columns) !== 1 ){
-					\Notice::Set("Primary key is just only one column. ($column)");
+					Notice::Set("Primary key is just only one column. ($column)");
 				};
 				//	...
 				self::$_config[$dsn]['databases'][$database]['tables'][$table]['columns'][$column]['key']   = 'pri';
@@ -421,7 +491,7 @@ class Configer
 
 		//	...
 		if( empty(self::$_config[$dsn]['databases'][$database]['tables'][$table]['columns'][$field]) ){
-			\Notice::Set("Set collate is failed. Has not been set this column. ($database, $table, $field)");
+			Notice::Set("Set collate is failed. Has not been set this column. ($database, $table, $field)");
 			return;
 		}
 

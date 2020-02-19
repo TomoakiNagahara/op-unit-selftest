@@ -15,6 +15,14 @@
  */
 namespace OP\UNIT;
 
+/** Used class
+ *
+ */
+use OP\OP_CORE;
+use OP\OP_UNIT;
+use OP\IF_UNIT;
+use function OP\Html;
+
 /** Selftest
  *
  * @created   2018-01-05
@@ -23,12 +31,12 @@ namespace OP\UNIT;
  * @author    Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
  * @copyright Tomoaki Nagahara All right reserved.
  */
-class Selftest implements \IF_UNIT
+class Selftest implements IF_UNIT
 {
 	/** trait
 	 *
 	 */
-	use \OP_CORE;
+	use OP_CORE, OP_UNIT;
 
 	/** Generate Configer instance.
 	 *
@@ -46,12 +54,16 @@ class Selftest implements \IF_UNIT
 	{
 		//	...
 		if(!$db = $this->Database() ){
-			include(__DIR__.'/form.phtml');
-			return;
+			$form = $this->Form();
+			$this->Unit('App')->Template(__DIR__.'/form.phtml',['form'=>$form]);
+			$this->Unit('WebPack')->Auto([__DIR__.'/form.css',__DIR__.'/form.js']);
+			return false;
 		};
 
 		//	...
-		\OP\UNIT\SELFTEST\Inspector::Auto($config, $db);
+		include(__DIR__.'/Inspector.class.php');
+		$inspector = new \OP\UNIT\SELFTEST\Inspector();
+		$inspector->Auto($config, $db);
 
 		//	Internal notice.
 		echo '<ol class="error">';
@@ -61,10 +73,36 @@ class Selftest implements \IF_UNIT
 		echo '</ol>';
 
 		//	...
-		\OP\UNIT\SELFTEST\Inspector::Result();
+		$inspector->Result();
 
 		//	...
-		return !\OP\UNIT\SELFTEST\Inspector::Failed();
+		if( $io = $inspector->isResult() ){
+			$message = 'Selftest was successful.';
+			$classes = '.bold .success';
+		}else{
+			$message = 'Selftest was failure.';
+			$classes = '.bold .failure';
+		}
+
+		//	...
+		Html($message, $classes);
+
+		//	...
+		return $io;
+	}
+
+	function Config()
+	{
+		//	...
+		static $_config;
+
+		//	...
+		if(!$_config ){
+			$_config = new \OP\UNIT\SELFTEST\Configer();
+		};
+
+		//	...
+		return $_config;
 	}
 
 	/** Get the unit of Database.
@@ -73,13 +111,28 @@ class Selftest implements \IF_UNIT
 	 */
 	function Database()
 	{
+		/* @var $form \OP\Unit\Form */
+		if(!$form = $this->Form() ){
+			return null;
+		};
+
 		//	...
-		if(!$config = $this->Form() ){
+		if(!$form->isValidate() ){
+			return null;
+		};
+
+		//	...
+		if(!$config = $form->Values() ){
+			return null;
+		};
+
+		//	...
+		if(!$this->Form()->isValidate() ){
 			return;
 		};
 
-		// @var $db \OP\UNIT\Database
-		if(!$db = \Unit::Instantiate('database') ){
+		/* @var $db \OP\UNIT\Database */
+		if(!$db = $this->Unit('Database') ){
 			return;
 		};
 
@@ -99,32 +152,21 @@ class Selftest implements \IF_UNIT
 
 	/** Form
 	 *
+	 * @return Form
 	 */
 	function Form()
 	{
 		//	...
-		if( $_SERVER['REQUEST_METHOD'] !== 'POST' ){
-			return;
+		static $_form;
+
+		//	...
+		if(!$_form ){
+			$_form = $this->Unit('Form');
+			$_form->Config(__DIR__.'/form.config.php');
 		};
 
 		//	...
-		$config = [];
-
-		//	...
-		foreach(['prod','host','port','user','password','charset'] as $key){
-			//	...
-			if(!$val = $_POST[$key] ?? null ){
-				/*
-				return false;
-				*/
-			}
-
-			//	...
-			$config[$key] = Escape($val);
-		};
-
-		//	...
-		return $config;
+		return $_form;
 	}
 
 	/** Inspector

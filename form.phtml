@@ -8,64 +8,40 @@
  * @author    Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
  * @copyright Tomoaki Nagahara All right reserved.
  */
-/* @var $form \IF_FORM */
-$form = \Unit::Instantiate('Form');
-$form->Config(__DIR__.'/config.form.php');
+/* @var $app   OP\UNIT\App  */
+/* @var $form  OP\UNIT\Form */
+/* @var $build string       */
+//	...
+$keys = [
+	'prod'     =>'Product',
+	'host'     =>'Host',
+	'port'     =>'Port',
+	'user'     =>'User',
+	'password' =>'Password',
+	'charset'  =>'Charset',
+];
 
 //	...
-$build = OP\UNIT\NEWWORLD\Template::Args('build');
+$form = $app->Unit('Form');
+$form->Config('form.config.php');
+
 ?>
 <section id="UNIT_SELFTEST">
 	<?php $form->Start() ?>
 		<div role="table">
-			<div>
+			<?php foreach($keys as $key => $label ): ?>
+			<div class="tr">
 				<div>
-					Product
+					<?= $label ?>
 				</div>
 				<div>
-					<?php $form->Input('prod') ?>
-				</div>
-			</div>
-			<div>
-				<div>
-					Host
+					<?php $form->Input($key) ?>
 				</div>
 				<div>
-					<?= $form->Input('host') ?>
+					<?php $form->Error($key) ?>
 				</div>
 			</div>
-			<div>
-				<div>
-					Port
-				</div>
-				<div>
-					<?php $form->Input('port') ?>
-				</div>
-			</div>
-			<div>
-				<div>
-					User
-				</div>
-				<div>
-					<?php $form->Input('user') ?>
-				</div>
-			</div>
-			<div>
-				<div>
-					Password
-				</div>
-				<div>
-					<?php $form->Input('password') ?>
-				</div>
-			</div>
-			<div>
-				<div>
-					Charset
-				</div>
-				<div>
-					<?php $form->Input('charset') ?>
-				</div>
-			</div>
+			<?php endforeach; ?>
 			<? if( \OP\UNIT\SELFTEST\Inspector::Failed() ): ?>
 			<div>
 				<div>
@@ -73,7 +49,7 @@ $build = OP\UNIT\NEWWORLD\Template::Args('build');
 				</div>
 				<div>
 					<label>
-					<input type="checkbox" name="build" value="<?= $build ?>" />Build
+					<input type="checkbox" name="build" value="<?= $build ?? null ?>" />Build
 					</label>
 				</div>
 			</div>
@@ -88,3 +64,6 @@ $build = OP\UNIT\NEWWORLD\Template::Args('build');
 		</div>
 	<?php $form->Finish() ?>
 </section>
+<?php
+//	...
+//$form->Debug();

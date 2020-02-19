@@ -37,6 +37,6 @@ spl_autoload_register( function($name){
 	if( file_exists($path) ){
 		include($path);
 	}else{
-		Notice::Set("Does not exists this file. ($path)");
+		\OP\Notice::Set("Does not exists this file. ($path)");
 	}
 });

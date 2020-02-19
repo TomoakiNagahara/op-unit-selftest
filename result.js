@@ -305,9 +305,15 @@ setTimeout(function(){
 						//	Remove list tag.
 					//	list.removeChild(item);
 					}else{
-						item.classList.add('error');
-						item.classList.add('bold');
-						item.classList.add('missing');
+
+						//	Missing or Leftover.
+						if( result === null ){
+							item.classList.add('leftover');
+						}else{
+							item.classList.add('error');
+							item.classList.add('bold');
+							item.classList.add('missing');
+						}
 					}
 				}
 			}

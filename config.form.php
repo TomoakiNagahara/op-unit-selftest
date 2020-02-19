@@ -20,6 +20,7 @@ $input['type']  = 'select';
 $input['label'] = 'Product';
 $input['cookie']   = true;
 $input['option'][] = 'mysql';
+$input['validate']['required'] = true;
 $form['input'][] = $input;
 
 //	...
@@ -30,6 +31,7 @@ $input['type']  = 'text';
 $input['label'] = ucfirst($name);
 $input['value'] = 'localhost';
 $input['cookie'] = true;
+$input['validate']['required'] = true;
 $form['input'][] = $input;
 
 //	...
@@ -40,6 +42,7 @@ $input['type']  = 'text';
 $input['label'] = ucfirst($name);
 $input['value'] = '3306';
 $input['cookie'] = true;
+$input['validate']['required'] = true;
 $form['input'][] = $input;
 
 //	...
@@ -50,6 +53,7 @@ $input['type']  = 'text';
 $input['label'] = ucfirst($name);
 $input['value'] = 'root';
 $input['cookie'] = true;
+$input['validate']['required'] = true;
 $form['input'][] = $input;
 
 //	...
@@ -58,6 +62,7 @@ $input = [];
 $input['name']  = $name;
 $input['type']  = 'password';
 $input['label'] = ucfirst($name);
+$input['validate']['required'] = true;
 $form['input'][] = $input;
 
 //	...
@@ -68,6 +73,7 @@ $input['type']  = 'text';
 $input['label'] = ucfirst($name);
 $input['value'] = 'utf8';
 $input['cookie'] = true;
+$input['validate']['required'] = true;
 $form['input'][] = $input;
 
 return $form;

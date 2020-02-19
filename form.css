@@ -1,0 +1,14 @@
+/**
+ * unit-selftest:/form.css
+ *
+ * @creation  2019-03-16 | Holiday in Mr.Donuts at Shakujii-Park-Station
+ * @version   1.0
+ * @package   unit-selftest
+ * @author    Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
+ * @copyright Tomoaki Nagahara All right reserved.
+ */
+
+#UNIT_SELFTEST div[role="table"] div.tr > div:nth-child(1) {
+	_border: 1px solid black;
+	padding: 0 0.5em;
+}

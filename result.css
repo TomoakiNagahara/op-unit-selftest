@@ -150,3 +150,11 @@
 #OP_SELFTEST .field.missing:after {
 	content: " → MISSING";
 }
+
+#OP_SELFTEST .field.leftover {
+	color: green;
+}
+
+#OP_SELFTEST .field.leftover:after {
+	content: " → LEFTOVER";
+}

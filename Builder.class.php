@@ -15,6 +15,18 @@
  */
 namespace OP\UNIT\SELFTEST;
 
+/** Used class
+ *
+ */
+use Exception;
+use OP\OP_CORE;
+use OP\Notice;
+use OP\Unit;
+use OP\UNIT\Database;
+use function OP\ifset;
+use function OP\Hasha1;
+use function OP\Json;
+
 /** Builder
  *
  * @created   2017-12-11
@@ -28,16 +40,38 @@ class Builder
 	/** trait
 	 *
 	 */
-	use \OP_CORE;
+	use OP_CORE;
+
+	/** Get SQL Object.
+	 *
+	 * @created  2019-04-09
+	 * @return  \OP\UNIT\SQL
+	 */
+	static private function _SQL()
+	{
+		//	...
+		static $_SQL;
+
+		//	...
+		if(!$_SQL ){
+			$_SQL = Unit::Instantiate('SQL');
+		};
+
+		//	...
+		return $_SQL;
+	}
 
 	/** Automatically.
 	 *
 	 * @param array $config
 	 * @param array $result
-	 * @param \OP\UNIT\DB $DB
+	 * @param \OP\UNIT\Database $DB
 	 */
 	static function Auto($configs, $results, $DB)
 	{
+		//	...
+		self::_SQL()->DB($DB);
+
 		//	...
 		$config = $DB->Config();
 		$dsn    = "{$config['prod']}://{$config['host']}:{$config['port']}";
@@ -67,7 +101,7 @@ class Builder
 			self::User( $configs[$dsn]['users'], $result['users'], $DB);
 			self::Grant($configs[$dsn]['users'], $result['users'], $DB);
 		} catch ( \Throwable $e ){
-			\Notice::Set($e);
+			Notice::Set($e);
 		}
 	}
 
@@ -75,8 +109,8 @@ class Builder
 	 *
 	 * @param   array      $config
 	 * @param   array      $result
-	 * @param  \OP\UNIT\DB $DB
-	 * @throws \Exception
+	 * @param   Database   $DB
+	 * @throws  Exception
 	 * @return  null
 	 */
 	static function Database($config, $result, $DB)
@@ -108,12 +142,13 @@ class Builder
 			$conf['database'] = $database;
 			$conf['charset']  = $charset;
 			$conf['collate']  = $collate;
-			$sql = \OP\UNIT\SQL\Database::Create($conf, $DB);
+		//	$sql = \OP\UNIT\SQL\Database::Create($conf, $DB);
+			$sql = self::_SQL()->Create()->Database($conf, $DB);
 			if(!$DB->Query($sql) ){
 
 				D($database, $config['databases'][$database]);
 
-				throw new \Exception(\Notice::Get()['message']);
+				throw new Exception(Notice::Get()['message']);
 			}
 
 			//	Overwrite result. All table build. (Is this neccessary?)
@@ -129,7 +164,7 @@ class Builder
 	 *
 	 * @param   array      $config
 	 * @param   array      $result
-	 * @param  \OP\UNIT\DB $DB
+	 * @param   Database   $DB
 	 * @return  null
 	 */
 	static function Table($configs, $result, $DB)
@@ -170,13 +205,13 @@ class Builder
 				$args['table']    = $table;
 
 				//	...
-				if(!$sql = \OP\UNIT\SQL\Table::Create($args, $DB) ){
-					throw new \Exception("Failed: $sql");
+				if(!$sql = self::_SQL()->DDL()->Create()->Table($args, $DB) ){
+					throw new Exception("Failed: $sql");
 				}
 
 				//	...
 				if(!$io  = $DB->Query($sql, 'create') ){
-					throw new \Exception("Failed: $io");
+					throw new Exception("Failed: $io");
 				}
 			}
 		}
@@ -184,9 +219,9 @@ class Builder
 
 	/** Build new field.
 	 *
-	 * @param array $config
-	 * @param array $result
-	 * @param \OP\UNIT\DB $DB
+	 * @param  array     $config
+	 * @param  array     $result
+	 * @param  Database  $DB
 	 */
 	static function Field($configs, &$results, $_db)
 	{
@@ -201,14 +236,14 @@ class Builder
 				//	...
 				foreach( $columns as $field => $column ){
 					//	...
-					$conf = $configs['databases'][$database]['tables'][$table]['columns'][$field];
+					$config = $configs['databases'][$database]['tables'][$table]['columns'][$field];
 
 					//	...
 					if( $first ){
 						$first = false;
-						$conf['first'] = true;
+						$config['first'] = true;
 					}else{
-						$conf['after'] = $after;
+						$config['after'] = $after;
 					}
 
 					//	...
@@ -217,7 +252,10 @@ class Builder
 					//	Create new column.
 					if(!$column['result'] ){
 						//	...
-						$sql = \OP\UNIT\SQL\Column::Create($database, $table, $field, $conf, $_db);
+						$config['database'] = $database;
+						$config['table']    = $table;
+						$config['field']    = $field;
+						$sql = self::_SQL()->DDL()->Create()->Column($config);
 
 						//	...
 						if(!$_db->Query($sql, 'alter') ){
@@ -225,7 +263,7 @@ class Builder
 						}
 
 						//	...
-						if( $conf['extra'] !== 'auto_increment' ){
+						if(($config['extra'] ?? null) !== 'auto_increment' ){
 							continue;
 						};
 
@@ -249,7 +287,6 @@ class Builder
 		foreach( $result['columns'] ?? [] as $database => $tables ){
 			//	...
 			foreach( $tables as $table => $columns ){
-
 				//	...
 				foreach( $columns as $name => $column ){
 					//	Change each column.
@@ -260,8 +297,12 @@ class Builder
 						}
 
 						//	Change is modify.
-						$conf= $config['databases'][$database]['tables'][$table]['columns'][$name];
-						$sql = \OP\UNIT\SQL\Column::Change($database, $table, $name, $conf, $_db);
+						$conf = $config['databases'][$database]['tables'][$table]['columns'][$name];
+						$conf['database'] = $database;
+						$conf['table']    = $table;
+
+						//	...
+						$sql = self::_SQL()->DDL()->Alter()->Column($conf);
 						$io  = $_db->Query($sql, 'alter');
 
 						//	...
@@ -279,27 +320,34 @@ class Builder
 
 	/** Build index.
 	 *
-	 * @param array $config
-	 * @param array $result
-	 * @param \OP\UNIT\DB $DB
+	 * @param  array     $config
+	 * @param  array     $result
+	 * @param  Database  $DB
 	 */
 	static function Index($_configs, &$_results, $DB)
 	{
 		//	...
-		foreach( $_configs['databases']    ?? [] as $database_name => $database ){
+		foreach( ($_results['indexes'] ?? []) as $database_name => $tables ){
 			//	...
-			foreach( $database['tables']   ?? [] as $table_name => $table ){
+			foreach( $tables as $table_name => $indexes ){
 				//	...
-				foreach( $table['indexes'] ?? [] as $index_name => $config ){
+				foreach( $indexes as $index_name => $result ){
 					//	...
-					if( $_results['indexes'][$database_name][$table_name][$index_name]['result'] ?? null ){
+					if( $result['result'] ){
 						continue;
-					}
+					};
+
+					//	...
+					$config = $_configs['databases'][$database_name]['tables'][$table_name]['indexes'][$index_name];
 
 					//	...
 					$config['database'] = $database_name;
 					$config['table']    = $table_name;
-					$sql = \OP\UNIT\SQL\Index::Create($DB, $config);
+
+					//	...
+					$sql = self::_SQL()->DDL()->Create()->Index($config);
+
+					//	...
 					$DB->Query($sql, 'alter');
 				};
 			};
@@ -310,7 +358,7 @@ class Builder
 	 *
 	 * @param array $configs
 	 * @param array $results
-	 * @param \OP\UNIT\DB $DB
+	 * @param Database $DB
 	 */
 	static function User($configs, $results, $DB)
 	{
@@ -327,13 +375,13 @@ class Builder
 			//	...
 			if(!ifset($result['exist']) ){
 				//	...
-				if(!$qu = \OP\UNIT\SQL\User::Create($config, $DB) ){
-					throw new \Exception("Failed: $qu");
+				if(!$qu = self::_SQL()->DDL()->Create()->User($config) ){
+					throw new Exception("Failed: $qu");
 				};
 
 				//	...
 				if(!$io = $DB->Query($qu) ){
-					throw new \Exception("Failed: $qu");
+					throw new Exception("Failed: $qu");
 				};
 			};
 
@@ -346,13 +394,13 @@ class Builder
 				$config['password'] = $configs[$user]['password'];
 
 				//	...
-				if(!$qu = \OP\UNIT\SQL\User::Password($config, $DB) ){
-					throw new \Exception("Failed: $qu");
+				if(!$qu = self::_SQL()->DDL()->Create()->Password($config) ){
+					throw new Exception("Failed: $qu");
 				};
 
 				//	...
 				if(!$io = $DB->Query($qu) ){
-					throw new \Exception("Failed: $qu ($io)");
+					throw new Exception("Failed: $qu ($io)");
 				};
 			};
 
@@ -364,13 +412,13 @@ class Builder
 				$config['privileges']= 'USAGE';
 
 				//	USAGE
-				if(!$qu = \OP\UNIT\SQL\Grant::Privilege($config, $DB) ){
-					throw new \Exception("Failed: $qu");
+				if(!$qu = self::_SQL()->DCL()->Grant()->Privilege($config) ){
+					throw new Exception("Failed: $qu");
 				};
 
 				//	...
 				if(!$io = $DB->Query($qu) ){
-					throw new \Exception("Failed: $qu ($io)");
+					throw new Exception("Failed: $qu ($io)");
 				};
 			};
 
@@ -384,8 +432,8 @@ class Builder
 
 	/** Add missing grant.
 	 *
-	 * @param	 array			 $result
-	 * @param	\IF_DATABASE	 $DB
+	 * @param  array     $result
+	 * @param  Database  $DB
 	 */
 	static function Grant($configs, $results, $DB)
 	{
@@ -400,22 +448,29 @@ class Builder
 			$host = $configs[$user]['host'];
 
 			//	...
-			foreach( $configs[$user]['privilege'] as $database => $tables ){
+			if( empty($configs[$user]['privilege']) ){
+				Notice::Set("privilege config is empty. ($user)");
+				return false;
+			};
 
+			//	...
+			foreach( $configs[$user]['privilege'] as $database => $tables ){
+				/*
 				//	...
-				$sql        = \OP\UNIT\SQL\Show::Table($DB, $database);
+				$sql        = self::_SQL()->DDL()->Show()->Table(['database'=>$database]);
 				$table_list = $DB->Query($sql);
+				*/
 
 				//	...
 				foreach( $tables as $table_names => $privileges ){
-
 					//	...
 					foreach( explode(',', str_replace(' ', '', $table_names )) as $table_name ){
-
+						/*
 						//	...
 						if( array_search($table_name, $table_list) === false ){
 							continue;
 						};
+						*/
 
 						//	...
 						foreach( $privileges as $privilege => $column ){
@@ -429,7 +484,7 @@ class Builder
 							$config['field']     = $column;
 
 							//	...
-							$qu = \OP\UNIT\SQL\Grant::Privilege($config, $DB);
+							$qu = self::_SQL()->DCL()->Grant()->Privilege($config);
 							$DB->Query($qu);
 						};
 					}; // table names

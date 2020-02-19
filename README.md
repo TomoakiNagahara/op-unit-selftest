@@ -1,25 +1,38 @@
 Unit of Selftest
 ===
 
-## How to use.
+## Usage.
 
-Only this.
+### Instantiate
 
+#### Singleton
+
+```php
+/* @var $selftest \OP\UNIT\Selftest */
+$selftest = $app->Unit('Selftest');
 ```
-//  Generate instance.
-$selftest = Unit::Instantiate('Selftest');
 
+#### Not Singleton
+
+```php
+/* @var $selftest \OP\UNIT\Selftest */
+$selftest = Unit::Instantiate('Selftest');
+```
+
+### Execute
+
+```php
 //  Automatically do self test by configuration file.
 $selftest->Auto('config.selftest.php');
 ```
 
-## How to generate configuration file.
+### Config
 
 ```
 <?php
 //  Instantiate self-test configuration generator.
 /* @var $configer \OP\UNIT\SELFTEST\Configer */
-$configer = Unit::Instantiate('Selftest')->Configer();
+$configer = $selftest->Configer();
 
 //  DSN configuration.
 $configer->DSN([
@@ -30,6 +43,7 @@ $configer->DSN([
 
 //  User configuration.
 $configer->User([
+  'host'     => 'localhost',
   'name'     => 'testcase-user',
   'password' => 'my-password',
   'charset'  => 'utf8',
