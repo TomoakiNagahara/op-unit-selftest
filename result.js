@@ -46,21 +46,15 @@ setTimeout(function(){
 
 		//	...
 		var list = document.createElement('ul');
-		var item = document.createElement('li');
-			item.innerText = 'Users';
-			list.appendChild(item);
-			root.appendChild(list);
+		root.appendChild(list);
+
+		//	...
 		__user(list, json[dsn]['users']);
 
 		//	...
 		__privilege(list, json[dsn]['privileges']);
 
 		//	...
-		var list = document.createElement('ul');
-		var item = document.createElement('li');
-			item.innerText = 'Databases';
-			list.appendChild(item);
-			root.appendChild(list);
 		__database(list, json[dsn]['databases']);
 
 		//	...
@@ -73,15 +67,24 @@ setTimeout(function(){
 		__columns(list, json[dsn]['columns']);
 
 		//	...
-		__index(list, json[dsn]['indexes']);
+		__indexes(list, json[dsn]['indexes']);
 	}
 
 	//	...
-	function __user( root, json){
+	function __user( list, json ){
+		//	...
+		var item = document.createElement('li');
+		list.appendChild(item);
+
+		//	...
+		var span = document.createElement('span');
+			span.innerText = 'Users';
+		item.appendChild(span);
+
 		//	...
 		var list = document.createElement('ol');
 			list.classList.add('user');
-			root.appendChild(list);
+		item.appendChild(list);
 
 		//	...
 		for(var user in json ){
@@ -101,7 +104,7 @@ setTimeout(function(){
 				item.appendChild(lack);
 				item.appendChild(modify);
 				item.dataset.user = user;
-				list.appendChild(item);
+			list.appendChild(item);
 
 			//	...
 			name.innerText = user;
@@ -114,55 +117,7 @@ setTimeout(function(){
 			error.classList.add('error');
 			if(!json[user]['exist']    ){ error.classList.add('exist')    }else
 			if(!json[user]['password'] ){ error.classList.add('password') }else
-		//	if(!json[user]['database'] ){ error.classList.add('database') }else
-		//	if(!json[user]['table']    ){ error.classList.add('table')    }else
 			if(!json[user]['privilege']){ error.classList.add('privilege')};
-
-			/*
-			//	...
-			if(!json[user]['database'] ){
-				//	...
-				for(var database_name in json[user]['databases'] ){
-					//	...
-					if( json[user]['databases'][database_name] ){
-						continue;
-					};
-					//	...
-					var span = document.createElement('span');
-						span.innerText = database_name;
-						lack.appendChild(span);
-				};
-			}else
-			if(!json[user]['table'] ){
-				//	...
-				for(var database_name in json[user]['tables'] ){
-					var tables = json[user]['tables'][database_name];
-					//	...
-					for(var table_name in tables ){
-						//	...
-						if( tables[table_name] ){
-							//	...
-							var span = document.createElement('span');
-								span.innerText = `${database_name}.${table}`;
-								lack.appendChild(span);
-						};
-					};
-				};
-			}else
-			if(!json[user]['privilege'] ){
-				//	...
-				for(var database_name in json[user]['privileges'] ){
-					var tables = json[user]['privileges'][database_name];
-					//	...
-					for(var table_name in tables ){
-						//	...
-						var span = document.createElement('span');
-							span.innerText = `Database: ${database_name}, Table: ${table_name}, Privilege: ${tables[table_name]}`;
-							lack.appendChild(span);
-					};
-				};
-			};
-			*/
 
 			//	...
 			if( json[user]['modify'] ){
@@ -221,8 +176,13 @@ setTimeout(function(){
 	//	...
 	function __database(root, json){
 		//	...
-		var ol = document.createElement('ol');
-		root.appendChild(ol);
+		var item = document.createElement('li');
+			item.innerText = 'Databases';
+		root.appendChild(item);
+
+		//	...
+		var list = document.createElement('ol');
+		item.appendChild(list);
 
 		//	...
 		for(var database in json ){
@@ -232,7 +192,7 @@ setTimeout(function(){
 				li.classList = color;
 				li.innerText = database;
 				li.dataset.database = database;
-				ol.appendChild(li);
+			list.appendChild(li);
 
 			//	...
 			if( json[database]['result'] ){
@@ -285,8 +245,8 @@ setTimeout(function(){
 				var list = document.createElement('ul');
 
 				//	...
-				root.querySelector('[data-database="'+database+'"]')
-					.querySelector('[data-table="'+table+'"]').appendChild(list);
+				root.querySelector('[data-database="' + database + '"]')
+					.querySelector('[data-table="'    + table    + '"]').appendChild(list);
 
 				//	...
 				for(var field in json[database][table] ){
@@ -336,9 +296,9 @@ setTimeout(function(){
 						}
 
 						//	...
-						var item = root	.querySelector('[data-database="'+database+'"]')
-										.querySelector('[data-table="'+table+'"]')
-										.querySelector('[data-field="'+field+'"]');
+						var item = root	.querySelector('[data-database="' + database + '"]')
+										.querySelector('[data-table="'    + table    + '"]')
+										.querySelector('[data-field="'    + field    + '"]');
 						item.appendChild(list);
 
 						//	...
@@ -359,70 +319,149 @@ setTimeout(function(){
 			name.innerText = column;
 
 		//	...
-		var current = document.createElement('span');
-		var arrow   = document.createElement('span');
-		var modify  = document.createElement('span');
-
-		current.classList.add('current');
-		arrow  .classList.add('arrow');
-		modify .classList.add('modify');
+		var arrow = __arrow(json.current, json.modify);
 
 		//	...
 		item.appendChild(name);
-		item.appendChild(current);
 		item.appendChild(arrow);
-		item.appendChild(modify);
 		list.appendChild(item);
-
-		//	...
-		current.innerText = json.current;
-		modify .innerText = json.modify;
-
-		//	...
-		if( json.current === null || json.current.length ){
-			current.classList.add('empty');
-		}
-		if( json.modify  === null || json.modify.length ){
-			modify .classList.add('empty');
-		}
 	};
 
 	//	...
-	function __index(root, json){
+	function __indexes(root, json){
 		//	...
-		for(let database in json ){
+		let item = __get_list_item('Indexes');
+		root.appendChild(item);
+
+		//	...
+		for(let database_name in json ){
+			//	...
+			let database_list = __get_list(item, database_name);
+			let database_item = database_list.querySelector('li');
+
 			//	..
-			for(let table in json[database] ){
+			for(let table_name in json[database_name] ){
 				//	...
-				for(let index in json[database][table] ){
-					let result = json[database][table][index];
+				let table_list = __get_list(database_item, table_name);
+				let table_item = table_list.querySelector('li');
+
+				//	...
+				for(let index_name in json[database_name][table_name] ){
+
+					//	...
+					let index_list = __get_list(table_item, index_name);
+					let index_item = index_list.querySelector('li');
+					let index_span = index_list.querySelector('span');
+
+					//	...
+					let result = json[database_name][table_name][index_name];
+
+					//	...
+					index_span.classList.add( result.result ? 'success': 'error' );
+
+					//	...
 					if( result.result ){
 						continue;
 					}
 
 					//	...
-					let column = result.column;
-					let type   = result.type;
+					if( result.exists === false ){
+						index_span.classList.add('exists');
+						continue;
+					}
 
 					//	...
-					for(let field of column.split(',') ){
-						//	...
-						let item = document.createElement('li');
-							item.innerText = type;
-							item.classList.add('error');
+					if( result.type === false ){
+						index_span.appendChild( __arrow(result.current, result.modify) );
+					}
 
-						//	...
-						let list = document.createElement('ul');
-							list.appendChild(item);
+					//	...
+					let field_list = __get_list(index_item);
 
-						//	...
-						root.querySelector('[data-database="'+database+'"]')
-							.querySelector('[data-table="'+table+'"]')
-							.querySelector('[data-field="'+field+'"]')
-							.appendChild(list);
-					};
+					//	Each fileds.
+					for(let field_name in result.field ){
+						let field_value = result.field[field_name];
+						let field_item  = __get_list_item(field_name, field_value);
+						field_list.appendChild(field_item);
+					}
 				};
 			};
 		};
+	};
+
+	//	...
+	function __arrow(text_current, text_modify){
+		//	...
+		var span         = document.createElement('span');
+		var span_current = document.createElement('span');
+		var span_arrow   = document.createElement('span');
+		var span_modify  = document.createElement('span');
+
+		//	...
+		span_current.innerText = text_current;
+		span_modify .innerText = text_modify;
+
+		//	...
+		span_current.classList.add('current');
+		span_arrow  .classList.add('arrow');
+		span_modify .classList.add('modify');
+
+		//	...
+		span.appendChild(span_current);
+		span.appendChild(span_arrow);
+		span.appendChild(span_modify);
+
+		//	...
+		if( text_current === null || text_current.length === 0 ){
+			span_current.classList.add('empty');
+		}
+		if( text_modify  === null || text_modify.length === 0 ){
+			span_modify .classList.add('empty');
+		}
+
+		//	...
+		return span;
+	}
+
+	//	...
+	function __get_list(item, text){
+		//	...
+		if( item.tagName !== 'LI' ){
+			D('item is not li tag.');
+			return null;
+		}
+
+		//	...
+		let ol = document.createElement('ol');
+
+		//	...
+		if( text ){
+			//	...
+			let item = __get_list_item(text);
+			ol.appendChild(item);
+		}
+
+		//	...
+		item.appendChild(ol);
+
+		//	...
+		return ol;
+	}
+
+	//	...
+	function __get_list_item(text, io){
+		//	...
+		let item = document.createElement('li');
+		let span = document.createElement('span');
+			span.innerText = text;
+		item.appendChild(span);
+
+		//	...
+		if( io !== undefined ){
+			span.classList.add( io ? 'success': 'failed' );
+		}
+
+		//	...
+		return item;
 	};
 }, 0);

@@ -270,16 +270,15 @@ class Inspector
 		self::Inspection($config, $DB);
 
 		//	Check build value.
-		$build = [];
-		$build['request'] = $_POST['build'] ?? null;
-		$build['session'] = self::Session('build');
-		$build['result']  = $build['request'] === $build['session'];
+		if( $build = $_POST['build'] ?? false ){
+			$build = $build === self::Session('build') ? true: false;
+		}
 
 		//	Change build value.
 		self::Session('build', Hasha1(microtime()));
 
 		//	...
-		if( self::$_failure and $build['result'] ){
+		if( self::$_failure and $build ){
 			//	...
 			Builder::Auto($config, self::$_result, $DB);
 
@@ -712,7 +711,12 @@ class Inspector
 							}
 						break;
 					}
-					$io = ifset($column[$key]) === ifset($fact[$key]) ? true: false;
+					$io = ($column[$key] ?? '') === ($fact[$key] ?? '') ? true: false;
+
+					if(!$io ){
+						D($column[$key], $fact[$key]);
+					}
+
 					break;
 
 				//	...
@@ -778,17 +782,23 @@ class Inspector
 		//	...
 		$success = true;
 
+		//	Left over.
+		foreach(array_diff(array_keys($_configs), array_keys($real)) as $index_name){
+			$_result['indexes'][$database][$table][$index_name]['result'] = false;
+		}
+
 		//	...
 		foreach( $_configs as $index_name => $index ){
 			//	...
 			$io = null;
+			$_result['indexes'][$database][$table][$index_name]['result'] = false;
 
-			//	...
-			if( is_array($index['column']) ){
-				$index['column'] = join(',', $index['column']);
-			}else if( is_string($index['column']) ){
-				$index['column'] = str_replace(' ', '', $index['column']);
-			};
+			//	Check if exists index at current table.
+			if( empty($real[$index_name]) ){
+				$_result['indexes'][$database][$table][$index_name]['exists'] = false;
+				$success = false;
+				continue;
+			}
 
 			//	...
 			switch( $type = strtolower($index['type']) ){
@@ -802,19 +812,65 @@ class Inspector
 					break;
 
 				case 'index':
-					if( $io = isset($real[$index_name]['unique']) ){
-						$io =!$real[$index_name]['unique'];
+					if( $io = isset($real[$index_name]) ){
+						$io = ($real[$index_name]['unique'] === false) ? true: false;
 					};
 					break;
 
 				case 'unique':
-					if( $io = isset($real[$index_name]['unique']) ){
+					if( $io = isset($real[$index_name]) ){
 						$io = $real[$index_name]['unique'];
 					};
 					break;
 
 				default:
 					Notice::Set("Has not been support this type. ($type)");
+			};
+
+			//	...
+			if(!$io ){
+				$current = $real[$index_name]['unique'] ? 'unique': 'multiple';
+				$_result['indexes'][$database][$table][$index_name]['type']    = false;
+				$_result['indexes'][$database][$table][$index_name]['modify']  = $type;
+				$_result['indexes'][$database][$table][$index_name]['current'] = $current;
+				$success = false;
+				continue;
+			}
+
+			//	...
+			if( is_string($index['column']) ){
+				$index['column'] = explode(',', $index['column']);
+			}
+
+			//	...
+			foreach( $index['column'] as $field_name ){
+				//	...
+				$field_name = trim($field_name);
+
+				//	...
+				$io = (array_search($field_name, $real[$index_name]['columns']) !== false) ? true: false;
+
+				//	...
+				$_result['indexes'][$database][$table][$index_name]['field'][$field_name] = $io;
+
+				//	...
+				if(!$io ){
+					//	...
+					$success = false;
+				}
+			}
+
+			//	...
+			$_result['indexes'][$database][$table][$index_name]['result'] = $success;
+
+			//	...
+			continue;
+
+			//	...
+			if( is_array($index['column']) ){
+				$index['column'] = join(',', $index['column']);
+			}else if( is_string($index['column']) ){
+				$index['column'] = str_replace(' ', '', $index['column']);
 			};
 
 			//	...

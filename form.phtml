@@ -8,9 +8,16 @@
  * @author    Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
  * @copyright Tomoaki Nagahara All right reserved.
  */
-/* @var $app   OP\UNIT\App  */
-/* @var $form  OP\UNIT\Form */
-/* @var $build string       */
+
+/** namespace
+ *
+ */
+namespace OP;
+
+/* @var $app   UNIT\App  */
+/* @var $form  UNIT\Form */
+/* @var $build string    */
+
 //	...
 $keys = [
 	'prod'     =>'Product',
@@ -22,8 +29,7 @@ $keys = [
 ];
 
 //	...
-$form = $app->Unit('Form');
-$form->Config('form.config.php');
+$form = Unit('Selftest')->Form();
 
 ?>
 <section id="UNIT_SELFTEST">

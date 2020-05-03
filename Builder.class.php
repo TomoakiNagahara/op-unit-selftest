@@ -142,8 +142,11 @@ class Builder
 			$conf['database'] = $database;
 			$conf['charset']  = $charset;
 			$conf['collate']  = $collate;
+
 		//	$sql = \OP\UNIT\SQL\Database::Create($conf, $DB);
-			$sql = self::_SQL()->Create()->Database($conf, $DB);
+		//	$sql = self::_SQL()->Create()->Database($conf, $DB);
+			$sql = self::_SQL()->DDL()->Create()->Database($conf, $DB);
+
 			if(!$DB->Query($sql) ){
 
 				D($database, $config['databases'][$database]);
@@ -236,6 +239,11 @@ class Builder
 				//	...
 				foreach( $columns as $field => $column ){
 					//	...
+					if( $column['result'] !== false ){
+						continue;
+					}
+
+					//	...
 					$config = $configs['databases'][$database]['tables'][$table]['columns'][$field];
 
 					//	...
@@ -250,7 +258,7 @@ class Builder
 					$after = $field;
 
 					//	Create new column.
-					if(!$column['result'] ){
+				//	if(!$column['result'] ){
 						//	...
 						$config['database'] = $database;
 						$config['table']    = $table;
@@ -269,7 +277,7 @@ class Builder
 
 						//	Touch primary key index result.
 						$results['indexes'][$database][$table][$field]['result'] = true;
-					};
+				//	};
 				};
 			};
 		};

@@ -81,8 +81,14 @@
 	content: ")"
 }
 
-#OP_SELFTEST .error > .error.exist:after {
-	content: "EXIST";
+#OP_SELFTEST .error.exists:after {
+	margin-left: 1em;
+}
+
+#OP_SELFTEST .error.exists:after,
+#OP_SELFTEST .error > .error.exist:after,
+#OP_SELFTEST .error > .error.exists:after {
+	content: "NOT EXISTS";
 }
 
 #OP_SELFTEST .error > .error.password:after {

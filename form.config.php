@@ -76,4 +76,5 @@ $input['cookie'] = true;
 $input['validate']['required'] = true;
 $form['input'][] = $input;
 
+//	...
 return $form;
