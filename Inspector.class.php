@@ -711,7 +711,7 @@ class Inspector
 							}
 						break;
 					}
-					$io = ($column[$key] ?? '') === ($fact[$key] ?? '') ? true: false;
+					$io = (string)($column[$key] ?? '') === ($fact[$key] ?? '') ? true: false;
 
 					if(!$io ){
 						D($column[$key], $fact[$key]);
@@ -812,13 +812,18 @@ class Inspector
 					break;
 
 				case 'index':
-					if( $io = isset($real[$index_name]) ){
+
+
+					D( $real[$index_name] );
+
+
+					if( $io = false /* isset($real[$index_name]) */ ){
 						$io = ($real[$index_name]['unique'] === false) ? true: false;
 					};
 					break;
 
 				case 'unique':
-					if( $io = isset($real[$index_name]) ){
+					if( $io = isset($real[$index_name]['unique']) ){
 						$io = $real[$index_name]['unique'];
 					};
 					break;
