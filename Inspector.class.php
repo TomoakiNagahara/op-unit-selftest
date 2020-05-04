@@ -815,14 +815,7 @@ class Inspector
 					break;
 
 				case 'index':
-
-
-					D( $real[$index_name] );
-
-
-					if( $io = false /* isset($real[$index_name]) */ ){
-						$io = ($real[$index_name]['unique'] === false) ? true: false;
-					};
+					$io = (($real[$index_name]['primary'] === false) and ($real[$index_name]['unique'] === false));
 					break;
 
 				case 'unique':
