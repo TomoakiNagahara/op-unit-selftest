@@ -704,17 +704,20 @@ class Inspector
 
 				//	...
 				case 'default':
-					switch( $column['type'] ){
-						case 'int':
-							if( $column['default'] !== null ){
-								$column['default'] = (string)$column['default'];
-							}
-						break;
-					}
-					$io = (string)($column[$key] ?? '') === ($fact[$key] ?? '') ? true: false;
+					//	If type of integer.
+					if( strpos($column['type'], 'int') !== false ){
+						//	Convert to string from integer, If not null.
+						if( $column['default'] !== null ){
+							$column['default'] = (string)$column['default'];
+						}
+					};
 
+					//	...
+					$io = ($column[$key] ?? '') === ($fact[$key] ?? '') ? true: false;
+
+					//	...
 					if(!$io ){
-						D($column[$key], $fact[$key]);
+					//	D($field, $key, $column, $fact);
 					}
 
 					break;
