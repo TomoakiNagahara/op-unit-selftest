@@ -36,14 +36,14 @@ $form = Unit('Selftest')->Form();
 	<?php $form->Start() ?>
 		<div role="table">
 			<?php foreach($keys as $key => $label ): ?>
-			<div class="tr">
-				<div>
+			<div class="tr <?= $key ?>">
+				<div class="label">
 					<?= $label ?>
 				</div>
-				<div>
+				<div class="input">
 					<?php $form->Input($key) ?>
 				</div>
-				<div>
+				<div class="error">
 					<?php $form->Error($key) ?>
 				</div>
 			</div>
