@@ -81,6 +81,10 @@
 	content: ")"
 }
 
+#OP_SELFTEST .user .database:before {
+	content: "DB:";
+}
+
 #OP_SELFTEST .error.exists:after {
 	margin-left: 1em;
 }
