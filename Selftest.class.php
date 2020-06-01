@@ -219,8 +219,10 @@ class Selftest implements IF_UNIT
 		echo '</dir>';
 	}
 
+	/*
 	function Debug($config=null)
 	{
 		\OP\UNIT\SELFTEST\Inspector::Debug();
 	}
+	*/
 }
