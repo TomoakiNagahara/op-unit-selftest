@@ -312,9 +312,21 @@ class Inspector
 
 		//	...
 		if(!isset($config[$dsn]) ){
-			self::Error("This DSN is not defined in config. ($dsn)");
+			//	...
+			$dsns = [];
+
+			//	...
+			foreach( $config as $tmp => $temp ){
+				$dsns[] = $tmp;
+			}
+
+			//	...
+			$dsns = join(', ', $dsns);
+
+			//	...
+			self::Error("DSN not match. ($dsn --> $dsns)");
 			self::$_failure = true;
-			return false;
+			return false; D($temp);
 		}
 
 		//	...
