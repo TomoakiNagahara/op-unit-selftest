@@ -1010,6 +1010,7 @@ class Inspector
 	/** For developers
 	 *
 	 */
+	/*
 	static function Debug()
 	{
 		//	...
@@ -1026,4 +1027,5 @@ class Inspector
 		//	...
 		D( $debug );
 	}
+	*/
 }
