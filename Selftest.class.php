@@ -67,9 +67,14 @@ class Selftest implements IF_UNIT
 
 		//	Internal notice.
 		echo '<ol class="error">';
+		//	Selftest
 		foreach( self::Error() as $error ){
 			Html($error, 'li');
 		};
+		//	Inspector
+		while( $error = $inspector->Error() ){
+			Html($error, 'li');
+		}
 		echo '</ol>';
 
 		//	...
@@ -202,7 +207,6 @@ class Selftest implements IF_UNIT
 			$_errors[] = $error;
 		}else{
 			//	...
-		//	D( \OP\UNIT\SELFTEST\Inspector::Error() );
 			return $_errors;
 		}
 	}
