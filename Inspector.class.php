@@ -430,20 +430,20 @@ class Inspector
 	 */
 	static function Privilege($DB, $host, $user, $configs, &$results)
 	{
-		//	...
+		//	Set default value is true.
 		$success = true;
 
-		//	...
+		//	Get current setting.
 		$sql  = self::_SQL()->DDL()->Show()->Grants(['host'=>$host, 'user'=>$user]);
 		$real = $DB->Query($sql, 'show');
 
-		//	...
+		//	USAGE only.
 		if( (count($real) === 1) and ($real['*']['*'][0] === 'USAGE') ){
 			$results['privileges'][$user][$host] = false;
 			return false;
 		};
 
-		//	...
+		//	Loop to each databases.
 		foreach( $configs['users'][$user]['privilege'] as $database => $databases ){
 
 			//	Check if all privileges
@@ -457,41 +457,41 @@ class Inspector
 				}
 			}
 
-			//	...
+			//	Loop to each tables.
 			foreach( $databases as $tables => $privileges ){
-				//	...
-				foreach( explode(',',$tables) as $table ){
-					//	...
-					$result = &$results['privileges'][$user][$host][$table];
 
-					//	...
+				//	Separate to each tables.
+				foreach( explode(',',$tables) as $table ){
+					//	Reference for eash to readable.
+					$result = &$results['privileges'][$user][$host][$database][$table];
+
+					//	Set default is false.
 					$result['result'] = false;
 
-					//	...
+					//	Does not exists table privileges.
 					if(!$result['exist'] = isset($real[$database][$table]) ){
-						$results['tables'][$database][$table]['exist'] = false;
 						$success = false;
 						continue;
 					};
 
-					//	...
+					//	Loop to each columns.
 					foreach( $privileges as $privilege => $columns ){
 						//	...
 						$base = explode(',',strtoupper($privilege));
 						$comm = array_intersect( $base, $real[$database][$table] );
 						$diff = array_diff($base, $comm);
 
-						//	...
+						//	Not match count.
 						if( count($diff) !== 0 ){
 							$success = false;
 							continue;
 						};
 
-						//	...
+						//	Match all.
 						$result['result']  = true;
 						$result['columns'] = $columns;
 
-						//	...
+						//	For Eclipse Notice.
 						if( false ){
 							D($result);
 						};
