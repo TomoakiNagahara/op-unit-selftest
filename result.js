@@ -126,6 +126,8 @@ setTimeout(function(){
 			};
 		}
 	}
+
+	//	...
 	function __privilege(root, json){
 		//	...
 		var area = document.createElement('div');
@@ -145,20 +147,28 @@ setTimeout(function(){
 				var ol = document.createElement('ol');
 
 				//	...
-				for(var table in json[user][host]){
-					var result = json[user][host][table]['result'];
-					var exist  = json[user][host][table]['exist'];
+				for(let database in json[user][host]){
 
 					//	...
-					if( result && exist ){
-						continue;
+					for(let table  in json[user][host][database]){
+						let result  = json[user][host][database][table]['result'];
+						let exist   = json[user][host][database][table]['exist'];
+
+						D(database, table, result, exist);
+
+						//	...
+						var li = document.createElement('li');
+							li.innerText = database;
+							li.classList.add('database');
+						ol.appendChild(li);
+
+						//	...
+						if( result /* && exist */ ){
+							li.classList.add('success');
+							continue;
+						};
 					};
-
-					//	...
-					var li = document.createElement('li');
-						li.innerText = table;
-					ol.appendChild(li);
-				};
+				}
 
 				//	...
 				if( ol.childElementCount ){
